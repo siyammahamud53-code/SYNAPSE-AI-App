@@ -9,10 +9,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Java SDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -30,7 +30,7 @@ jobs:
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload Release APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SYNAPSE-AI-Release-APK
           path: build/app/outputs/flutter-apk/app-release.apk
