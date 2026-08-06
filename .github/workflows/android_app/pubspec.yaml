@@ -1,0 +1,16 @@
+name: synapse_ai_mobile
+description: A mobile controller for SYNAPSE-AI-Core.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0           # AI সার্ভারে কল করার জন্য
+  shared_preferences: ^2.2.2 # ডিভাইসের ডেটা সেভ করার জন্য
+
+flutter:
+  uses-material-design: true
