@@ -54,14 +54,25 @@ class _ChatScreenState extends State<ChatScreen> {
           .post(
             Uri.parse('$_baseUrl/chat'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'message': text, 'prompt': text}),
+            body: jsonEncode({
+              'message': text,
+              'prompt': text,
+              'text': text,
+              'user_input': text,
+              'query': text,
+            }),
           )
           .timeout(const Duration(seconds: 45));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        String reply = data['response'] ?? data['reply'] ?? data['message'] ?? 'কোনো উত্তর পাওয়া যায়নি।';
-        
+        String reply = data['response'] ??
+            data['reply'] ??
+            data['message'] ??
+            data['result'] ??
+            data['text'] ??
+            'কোনো উত্তর পাওয়া যায়নি।';
+
         setState(() {
           _messages.add({'sender': 'ai', 'text': reply});
         });
@@ -108,19 +119,22 @@ class _ChatScreenState extends State<ChatScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Align(
-                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment:
+                        isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
                       padding: const EdgeInsets.all(12.0),
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.8,
                       ),
                       decoration: BoxDecoration(
-                        color: isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
+                        color:
+                            isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                       child: Text(
                         msg['text'] ?? '',
-                        style: const TextStyle(color: Colors.white, fontSize: 15.0),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 15.0),
                       ),
                     ),
                   ),
@@ -134,7 +148,8 @@ class _ChatScreenState extends State<ChatScreen> {
               child: CircularProgressIndicator(color: Colors.deepPurple),
             ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
             color: const Color(0xFF1E1E1E),
             child: Row(
               children: [
