@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 void main() {
   runApp(const SynapseApp());
@@ -12,13 +13,13 @@ class SynapseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SYNAPSE AI',
+      title: 'SYNAPSE AI Core Client',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF121212),
-        primaryColor: const Color(0xFF6200EE),
+        primaryColor: Colors.deepPurple,
       ),
       home: const ChatScreen(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -35,40 +36,50 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
 
-  // Render-এ চলা মেইন এআই ব্যাকএন্ডের ইউআরএল
-  final String _apiUrl = "https://synapse-ai-core.onrender.com/chat";
+  // Render Backend Base URL
+  final String _baseUrl = 'https://synapse-ai-core.onrender.com';
 
-  Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
 
     setState(() {
-      _messages.add({"sender": "user", "text": text});
+      _messages.add({'sender': 'user', 'text': text});
       _isLoading = true;
     });
+
     _controller.clear();
 
     try {
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"message": text}),
-      ).timeout(const Duration(seconds: 30));
+      // Backend URL request
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/chat'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'message': text, 'prompt': text}),
+          )
+          .timeout(const Duration(seconds: 45));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final aiReply = data["reply"] ?? data["response"] ?? data["message"] ?? "উত্তর প্রসেস করা হয়েছে।";
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        String reply = data['response'] ?? data['reply'] ?? data['message'] ?? 'কোনো উত্তর পাওয়া যায়নি।';
+        
         setState(() {
-          _messages.add({"sender": "ai", "text": aiReply});
+          _messages.add({'sender': 'ai', 'text': reply});
         });
       } else {
         setState(() {
-          _messages.add({"sender": "ai", "text": "সার্ভার রেসপন্স ত্রুটি: ${response.statusCode}"});
+          _messages.add({
+            'sender': 'ai',
+            'text': 'সার্ভার রেসপন্স করেনি (Code: ${response.statusCode})'
+          });
         });
       }
     } catch (e) {
       setState(() {
-        _messages.add({"sender": "ai", "text": "কানেকশন সমস্যা! ব্যাকএন্ড কি চালু আছে? ($e)"});
+        _messages.add({
+          'sender': 'ai',
+          'text': 'কানেকশন সমস্যা! ব্যাকএন্ড কি চালু আছে?\n($e)'
+        });
       });
     } finally {
       setState(() {
@@ -83,35 +94,33 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: const Text('SYNAPSE AI Core Client'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1F1F1F),
-        elevation: 2,
+        backgroundColor: const Color(0xFF1E1E1E),
+        elevation: 0,
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12.0),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final msg = _messages[index];
-                final isUser = msg["sender"] == "user";
+                final isUser = msg['sender'] == 'user';
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.all(12.0),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.8,
+                    ),
                     decoration: BoxDecoration(
-                      color: isUser ? Colors.deepPurpleAccent : const Color(0xFF2C2C2C),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(12),
-                        topRight: const Radius.circular(12),
-                        bottomLeft: isUser ? const Radius.circular(12) : Radius.zero,
-                        bottomRight: isUser ? Radius.zero : const Radius.circular(12),
-                      ),
+                      color: isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: Text(
-                      msg["text"] ?? "",
-                      style: const TextStyle(fontSize: 15, color: Colors.white),
+                      msg['text'] ?? '',
+                      style: const TextStyle(color: Colors.white, fontSize: 15.0),
                     ),
                   ),
                 );
@@ -120,12 +129,12 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           if (_isLoading)
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: LinearProgressIndicator(color: Colors.deepPurpleAccent),
+              padding: EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(color: Colors.deepPurple),
             ),
           Container(
-            padding: const EdgeInsets.all(8),
-            color: const Color(0xFF1F1F1F),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+            color: const Color(0xFF1E1E1E),
             child: Row(
               children: [
                 Expanded(
@@ -133,17 +142,16 @@ class _ChatScreenState extends State<ChatScreen> {
                     controller: _controller,
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
-                      hintText: "SYNAPSE-কে প্রশ্ন করুন...",
+                      hintText: 'SYNAPSE-কে প্রশ্ন করুন...',
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
-                    onSubmitted: (_) => _sendMessage(),
+                    onSubmitted: _sendMessage,
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
-                  onPressed: _sendMessage,
+                  onPressed: () => _sendMessage(_controller.text),
                 ),
               ],
             ),
