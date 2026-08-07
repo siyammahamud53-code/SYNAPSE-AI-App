@@ -31,6 +31,9 @@ jobs:
           cp -r android ../
           cp pubspec.yaml ../ 2>/dev/null || true
 
+      - name: Add Required Packages
+        run: flutter pub add http
+
       - name: Get Dependencies
         run: flutter pub get
 
