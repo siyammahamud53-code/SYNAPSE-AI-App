@@ -36,7 +36,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
 
-  // Render Backend Base URL
   final String _baseUrl = 'https://synapse-ai-core.onrender.com';
 
   Future<void> _sendMessage(String text) async {
@@ -58,8 +57,6 @@ class _ChatScreenState extends State<ChatScreen> {
               'message': text,
               'prompt': text,
               'text': text,
-              'user_input': text,
-              'query': text,
             }),
           )
           .timeout(const Duration(seconds: 45));
@@ -70,8 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
             data['reply'] ??
             data['message'] ??
             data['result'] ??
-            data['text'] ??
-            'কোনো উত্তর পাওয়া যায়নি।';
+            data.toString();
 
         setState(() {
           _messages.add({'sender': 'ai', 'text': reply});
@@ -80,7 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _messages.add({
             'sender': 'ai',
-            'text': 'সার্ভার রেসপন্স করেনি (Code: ${response.statusCode})'
+            'text': 'Error ${response.statusCode}:\n${response.body}'
           });
         });
       }
@@ -88,7 +84,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add({
           'sender': 'ai',
-          'text': 'কানেকশন সমস্যা! ব্যাকএন্ড কি চালু আছে?\n($e)'
+          'text': 'কানেকশন সমস্যা!\n($e)'
         });
       });
     } finally {
@@ -134,7 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Text(
                         msg['text'] ?? '',
                         style:
-                            const TextStyle(color: Colors.white, fontSize: 15.0),
+                            const TextStyle(color: Colors.white, fontSize: 14.0),
                       ),
                     ),
                   ),
