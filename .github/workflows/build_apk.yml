@@ -31,6 +31,16 @@ jobs:
           cp -r android ../
           cp pubspec.yaml ../ 2>/dev/null || true
 
+      - name: Force Inject Internet Permission
+        run: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          if grep -q "android.permission.INTERNET" "$MANIFEST_PATH"; then
+            echo "Internet permission already exists."
+          else
+            sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' "$MANIFEST_PATH"
+            echo "Successfully injected Internet Permission!"
+          fi
+
       - name: Add Required Packages
         run: flutter pub add http
 
