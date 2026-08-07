@@ -50,7 +50,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.clear();
 
     try {
-      // Backend URL request
       final response = await http
           .post(
             Uri.parse('$_baseUrl/chat'),
@@ -106,21 +105,23 @@ class _ChatScreenState extends State<ChatScreen> {
               itemBuilder: (context, index) {
                 final msg = _messages[index];
                 final isUser = msg['sender'] == 'user';
-                return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: Text(
-                      msg['text'] ?? '',
-                      style: const TextStyle(color: Colors.white, fontSize: 15.0),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Align(
+                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.all(12.0),
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Text(
+                        msg['text'] ?? '',
+                        style: const TextStyle(color: Colors.white, fontSize: 15.0),
+                      ),
                     ),
                   ),
                 );
