@@ -54,6 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Uri.parse('$_baseUrl/chat'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
+              'user_id': 'user_001',
               'message': text,
               'prompt': text,
               'text': text,
