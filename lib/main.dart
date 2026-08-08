@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:async';
 
 void main() {
   runApp(const SynapseApp());
@@ -43,53 +42,55 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       _messages.add({'sender': 'user', 'text': text});
+      // এআই এর জন্য খালি মেসেজ বাবল তৈরি
+      _messages.add({'sender': 'ai', 'text': ''});
       _isLoading = true;
     });
 
     _controller.clear();
+    final aiMessageIndex = _messages.length - 1;
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$_baseUrl/chat'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'user_id': 'user_001',
-              'message': text,
-              'prompt': text,
-              'text': text,
-            }),
-          )
-          .timeout(const Duration(seconds: 45));
+      final request = http.Request('POST', Uri.parse('$_baseUrl/chat'));
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode({
+        'user_id': 'user_001',
+        'message': text,
+      });
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
-        String reply = data['response'] ??
-            data['reply'] ??
-            data['message'] ??
-            data['result'] ??
-            data.toString();
+      final client = http.Client();
+      final streamedResponse = await client.send(request);
 
-        setState(() {
-          _messages.add({'sender': 'ai', 'text': reply});
+      if (streamedResponse.statusCode == 200) {
+        streamedResponse.stream
+            .transform(utf8.decoder)
+            .listen((chunk) {
+          setState(() {
+            _messages[aiMessageIndex]['text'] =
+                (_messages[aiMessageIndex]['text'] ?? '') + chunk;
+          });
+        }, onDone: () {
+          setState(() {
+            _isLoading = false;
+          });
+          client.close();
+        }, onError: (e) {
+          setState(() {
+            _messages[aiMessageIndex]['text'] = 'এরর: $e';
+            _isLoading = false;
+          });
+          client.close();
         });
       } else {
         setState(() {
-          _messages.add({
-            'sender': 'ai',
-            'text': 'Error ${response.statusCode}:\n${response.body}'
-          });
+          _messages[aiMessageIndex]['text'] =
+              'সার্ভার এরর: Code ${streamedResponse.statusCode}';
+          _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _messages.add({
-          'sender': 'ai',
-          'text': 'কানেকশন সমস্যা!\n($e)'
-        });
-      });
-    } finally {
-      setState(() {
+        _messages[aiMessageIndex]['text'] = 'কানেকশন সমস্যা: $e';
         _isLoading = false;
       });
     }
@@ -142,7 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(color: Colors.deepPurple),
+              child: LinearProgressIndicator(color: Colors.deepPurpleAccent),
             ),
           Container(
             padding:
