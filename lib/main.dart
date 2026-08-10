@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:convert';
 
 void main() {
@@ -18,13 +19,105 @@ class SynapseApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF121212),
         primaryColor: Colors.deepPurple,
       ),
-      home: const ChatScreen(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  GoogleSignInAccount? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
+      setState(() {
+        _currentUser = account;
+      });
+    });
+    _googleSignIn.signInSilently();
+  }
+
+  Future<void> _handleSignIn() async {
+    try {
+      await _googleSignIn.signIn();
+    } catch (error) {
+      debugPrint("Sign in error: $error");
+    }
+  }
+
+  Future<void> _handleSignOut() => _googleSignIn.disconnect();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = _currentUser;
+    if (user != null) {
+      return ChatScreen(
+        userEmail: user.email,
+        displayName: user.displayName ?? "User",
+        photoUrl: user.photoUrl,
+        onSignOut: _handleSignOut,
+      );
+    }
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.psychology, size: 90, color: Colors.deepPurpleAccent),
+              const SizedBox(height: 20),
+              const Text(
+                'SYNAPSE AI CORE',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Universal Intelligent Assistant Bridge',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                icon: const Icon(Icons.login, color: Colors.black),
+                label: const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: _handleSignIn,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String userEmail;
+  final String displayName;
+  final String? photoUrl;
+  final VoidCallback onSignOut;
+
+  const ChatScreen({
+    super.key,
+    required this.userEmail,
+    required this.displayName,
+    this.photoUrl,
+    required this.onSignOut,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -42,7 +135,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       _messages.add({'sender': 'user', 'text': text});
-      // এআই এর জন্য খালি মেসেজ বাবল তৈরি
       _messages.add({'sender': 'ai', 'text': ''});
       _isLoading = true;
     });
@@ -51,40 +143,26 @@ class _ChatScreenState extends State<ChatScreen> {
     final aiMessageIndex = _messages.length - 1;
 
     try {
-      final request = http.Request('POST', Uri.parse('$_baseUrl/chat'));
-      request.headers['Content-Type'] = 'application/json';
-      request.body = jsonEncode({
-        'user_id': 'user_001',
-        'message': text,
-      });
+      final response = await http.post(
+        Uri.parse('$_baseUrl/chat'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': widget.userEmail.split('@')[0],
+          'email': widget.userEmail,
+          'display_name': widget.displayName,
+          'message': text,
+        }),
+      );
 
-      final client = http.Client();
-      final streamedResponse = await client.send(request);
-
-      if (streamedResponse.statusCode == 200) {
-        streamedResponse.stream
-            .transform(utf8.decoder)
-            .listen((chunk) {
-          setState(() {
-            _messages[aiMessageIndex]['text'] =
-                (_messages[aiMessageIndex]['text'] ?? '') + chunk;
-          });
-        }, onDone: () {
-          setState(() {
-            _isLoading = false;
-          });
-          client.close();
-        }, onError: (e) {
-          setState(() {
-            _messages[aiMessageIndex]['text'] = 'এরর: $e';
-            _isLoading = false;
-          });
-          client.close();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        setState(() {
+          _messages[aiMessageIndex]['text'] = data['response'] ?? 'কোনো উত্তর পাওয়া যায়নি।';
+          _isLoading = false;
         });
       } else {
         setState(() {
-          _messages[aiMessageIndex]['text'] =
-              'সার্ভার এরর: Code ${streamedResponse.statusCode}';
+          _messages[aiMessageIndex]['text'] = 'সার্ভার এরর: Code ${response.statusCode}';
           _isLoading = false;
         });
       }
@@ -100,10 +178,15 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SYNAPSE AI Core Client'),
-        centerTitle: true,
+        title: Text(widget.displayName),
         backgroundColor: const Color(0xFF1E1E1E),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            onPressed: widget.onSignOut,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -117,22 +200,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Align(
-                    alignment:
-                        isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
                       padding: const EdgeInsets.all(12.0),
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.8,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
+                        color: isUser ? Colors.deepPurple : const Color(0xFF2C2C2C),
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                       child: Text(
                         msg['text'] ?? '',
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 14.0),
+                        style: const TextStyle(color: Colors.white, fontSize: 14.0),
                       ),
                     ),
                   ),
@@ -146,8 +226,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: LinearProgressIndicator(color: Colors.deepPurpleAccent),
             ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
             color: const Color(0xFF1E1E1E),
             child: Row(
               children: [
