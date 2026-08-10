@@ -12,6 +12,9 @@ dependencies:
   http: ^1.2.0
   cupertino_icons: ^1.0.6
   google_sign_in: ^6.2.1
+  flutter_tts: ^3.8.5
+  speech_to_text: ^6.6.0
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:
