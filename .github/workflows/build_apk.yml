@@ -23,6 +23,11 @@ jobs:
           flutter-version: '3.22.x'
           channel: 'stable'
 
+      - name: Force Upgrade Gradle Wrapper to 8.4
+        run: |
+          sed -i 's/gradle-8.0-all.zip/gradle-8.4-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+          sed -i 's/gradle-8.0-bin.zip/gradle-8.4-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+
       - name: Force Inject Required Permissions for 24/7 Background & Audio
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
