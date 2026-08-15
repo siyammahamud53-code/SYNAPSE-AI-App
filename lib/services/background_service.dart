@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
-// ব্যাকগ্রাউন্ড টাস্ক এর আসল হ্যান্ডলার
+// ব্যাকগ্রাউন্ড টাস্ক হ্যান্ডলার
 @pragma('vm:entry-point')
 void startCallback() {
   FlutterForegroundTask.setTaskHandler(MyBackgroundTaskHandler());
@@ -10,25 +9,22 @@ void startCallback() {
 
 class MyBackgroundTaskHandler extends TaskHandler {
   @override
-  Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {
-    // ব্যাকগ্রাউন্ড কাজ শুরুর লজিক
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     print("Synapse AI Background Service Started at $timestamp");
   }
 
   @override
-  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
-    // ব্যাকগ্রাউন্ডে কোনো কাজ রানিং রাখার সময়
+  Future<void> onRepeatEvent(DateTime timestamp) async {
+    // ব্যাকগ্রাউন্ডে রেগুলার লুপের কাজ
   }
 
   @override
-  Future<void> onDestroy(DateTime timestamp, SendPort? sendPort) async {
+  Future<void> onDestroy(DateTime timestamp) async {
     print("Background Service Destroyed");
   }
 
   @override
-  void ButtonPressed(String id) {
-    // নোটিফিকেশনের বাটনে প্রেস করলে কি হবে
-  }
+  void onNotificationButtonPressed(String id) {}
 
   @override
   void onNotificationPressed() {
@@ -45,19 +41,13 @@ class BackgroundService {
         channelDescription: 'Running ambient listening & brain sync',
         channelImportance: NotificationImportance.LOW,
         priority: NotificationPriority.LOW,
-        iconData: const NotificationIconData(
-          resType: ResourceType.mipmap,
-          resPrefix: ResourcePrefix.ic,
-          name: 'launcher',
-        ),
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: true,
         playSound: false,
       ),
-      foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 5000,
-        isOnceEvent: false,
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(5000),
         autoRunOnBoot: true,
         allowWakeLock: true,
         allowWifiLock: true,
@@ -70,6 +60,7 @@ class BackgroundService {
       return FlutterForegroundTask.restartService();
     } else {
       return FlutterForegroundTask.startService(
+        serviceId: 256,
         notificationTitle: 'Synapse AI Active',
         notificationText: 'Listening in background & Synced with Brain',
         callback: startCallback,
