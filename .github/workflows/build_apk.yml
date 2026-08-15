@@ -35,23 +35,20 @@ jobs:
           EOF
           echo "Gradle 8.4 wrapper property successfully injected!"
 
-      - name: Fix AndroidManifest Package Attribute & Inject Permissions
+      - name: Fix AndroidManifest Package Attribute
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          # Remove outdated package attribute from manifest tag
           sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
-          
-          # Inject Internet permission if missing
           if ! grep -q "android.permission.INTERNET" "$MANIFEST_PATH"; then
             sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_PATH"
           fi
           echo "Successfully cleaned AndroidManifest!"
 
-      - name: Get Dependencies
-        run: flutter pub get
-
-      - name: Clean Project
-        run: flutter clean
+      - name: Clean Build Cache & Regenerate Plugin Registrant
+        run: |
+          flutter clean
+          rm -rf android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+          flutter pub get
 
       - name: Build Release APK
         run: flutter build apk --release --no-tree-shake-icons
