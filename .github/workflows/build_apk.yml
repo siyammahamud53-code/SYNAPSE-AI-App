@@ -23,19 +23,11 @@ jobs:
           flutter-version: '3.22.x'
           channel: 'stable'
 
-      - name: Generate Fresh Flutter Project
-        run: |
-          mkdir -p temp_app
-          cd temp_app
-          flutter create --org com.synapse --project-name synapse_ai_app .
-          cp -r android ../
-          cp pubspec.yaml ../ 2>/dev/null || true
-
       - name: Force Inject Required Permissions for 24/7 Background & Audio
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           if ! grep -q "android.permission.INTERNET" "$MANIFEST_PATH"; then
-            sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>\n    <uses-permission android:name="android.permission.WAKE_LOCK"/>' "$MANIFEST_PATH"
+            sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_PATH"
           fi
           echo "Successfully injected All Required Permissions!"
 
