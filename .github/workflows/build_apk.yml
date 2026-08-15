@@ -35,13 +35,17 @@ jobs:
           EOF
           echo "Gradle 8.4 wrapper property successfully injected!"
 
-      - name: Force Inject Required Permissions for 24/7 Background & Audio
+      - name: Fix AndroidManifest Package Attribute & Inject Permissions
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          # Remove outdated package attribute from manifest tag
+          sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
+          
+          # Inject Internet permission if missing
           if ! grep -q "android.permission.INTERNET" "$MANIFEST_PATH"; then
             sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_PATH"
           fi
-          echo "Successfully injected All Required Permissions!"
+          echo "Successfully cleaned AndroidManifest!"
 
       - name: Get Dependencies
         run: flutter pub get
