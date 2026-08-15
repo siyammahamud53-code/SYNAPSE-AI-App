@@ -1,82 +1,22 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+name: synapse_ai_app
+description: "SYNAPSE AI - JARVIS HUD Interface"
+publish_to: 'none'
+version: 1.0.0+1
 
-// ব্যাকগ্রাউন্ড টাস্ক হ্যান্ডলার
-@pragma('vm:entry-point')
-void startCallback() {
-  FlutterForegroundTask.setTaskHandler(MyBackgroundTaskHandler());
-}
+environment:
+  sdk: '>=3.0.0 <4.0.0'
 
-class MyBackgroundTaskHandler extends TaskHandler {
-  @override
-  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    print("Synapse AI Background Service Started at $timestamp");
-  }
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  flutter_foreground_task: ^6.1.1
+  cupertino_icons: ^1.0.8
 
-  @override
-  Future<void> onRepeatEvent(DateTime timestamp) async {
-    // ব্যাকগ্রাউন্ডে রেগুলার লুপের কাজ
-  }
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
 
-  @override
-  Future<void> onDestroy(DateTime timestamp) async {
-    print("Background Service Destroyed");
-  }
-
-  @override
-  void onNotificationButtonPressed(String id) {
-    // নোটিফিকেশনের বাটনে প্রেস করলে যা হবে
-  }
-
-  @override
-  void onNotificationPressed() {
-    FlutterForegroundTask.launchApp();
-  }
-}
-
-class BackgroundService {
-  static Future<void> initForegroundTask() async {
-    FlutterForegroundTask.init(
-      androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'synapse_bg_channel',
-        channelName: 'Synapse AI Service',
-        channelDescription: 'Running ambient listening & brain sync',
-        channelImportance: NotificationImportance.LOW,
-        priority: NotificationPriority.LOW,
-      ),
-      iosNotificationOptions: const IOSNotificationOptions(
-        showNotification: true,
-        playSound: false,
-      ),
-      foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.repeat(5000),
-        autoRunOnBoot: true,
-        allowWakeLock: true,
-        allowWifiLock: true,
-      ),
-    );
-  }
-
-  static Future<bool> startService() async {
-    if (await FlutterForegroundTask.isRunningService) {
-      return FlutterForegroundTask.restartService();
-    } else {
-      return FlutterForegroundTask.startService(
-        serviceId: 256,
-        notificationTitle: 'Synapse AI Active',
-        notificationText: 'Listening in background & Synced with Brain',
-        notificationIcon: const NotificationIconData(
-          resType: ResourceType.mipmap,
-          resPrefix: ResourcePrefix.ic,
-          name: 'launcher',
-        ),
-        callback: startCallback,
-      );
-    }
-  }
-
-  static Future<bool> stopService() async {
-    return FlutterForegroundTask.stopService();
-  }
-}
+flutter:
+  uses-material-design: true
