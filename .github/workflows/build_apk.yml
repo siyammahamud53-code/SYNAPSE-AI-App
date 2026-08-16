@@ -23,6 +23,16 @@ jobs:
           flutter-version: '3.22.x'
           channel: 'stable'
 
+      - name: Enable AndroidX & Setup Properties
+        run: |
+          mkdir -p android
+          cat << 'EOF' > android/gradle.properties
+          org.gradle.jvmargs=-Xmx4608m
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+          echo "AndroidX enabled in gradle.properties!"
+
       - name: Ensure Gradle Wrapper 8.4 Exists
         run: |
           mkdir -p android/gradle/wrapper
@@ -33,22 +43,19 @@ jobs:
           zipStorePath=wrapper/dists
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
           EOF
-          echo "Gradle 8.4 wrapper property successfully injected!"
 
-      - name: Fix AndroidManifest Package Attribute
+      - name: Clean Conflicting Legacy Files & Fix Manifest
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
           if ! grep -q "android.permission.INTERNET" "$MANIFEST_PATH"; then
             sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_PATH"
           fi
-          echo "Successfully cleaned AndroidManifest!"
+          # Force remove pre-generated plugin file if commited into repo
+          find android/ -name "GeneratedPluginRegistrant.java" -exec rm -fv {} +
 
-      - name: Clean Build Cache & Regenerate Plugin Registrant
-        run: |
-          flutter clean
-          rm -rf android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
-          flutter pub get
+      - name: Get Dependencies
+        run: flutter pub get
 
       - name: Build Release APK
         run: flutter build apk --release --no-tree-shake-icons
