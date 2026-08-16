@@ -23,28 +23,28 @@ jobs:
           flutter-version: '3.22.x'
           channel: 'stable'
 
-      - name: Locate Flutter Project Directory
-        id: set-dir
+      - name: Locate Working Directory
+        id: locate-dir
         run: |
-          if [ -d "SYNAPSE-AI-App" ]; then
-            echo "working_dir=SYNAPSE-AI-App" >> $GITHUB_ENV
+          if [ -d "SYNAPSE-AI-App" ] && [ -f "SYNAPSE-AI-App/pubspec.yaml" ]; then
+            echo "target_dir=SYNAPSE-AI-App" >> $GITHUB_ENV
           else
-            echo "working_dir=." >> $GITHUB_ENV
+            echo "target_dir=." >> $GITHUB_ENV
           fi
 
-      - name: Enable AndroidX & Setup Properties
+      - name: Enable AndroidX & Setup Gradle Properties
         run: |
-          mkdir -p ${{ env.working_dir }}/android
-          cat << 'EOF' > ${{ env.working_dir }}/android/gradle.properties
+          mkdir -p ${{ env.target_dir }}/android
+          cat << 'EOF' > ${{ env.target_dir }}/android/gradle.properties
           org.gradle.jvmargs=-Xmx4608m
           android.useAndroidX=true
           android.enableJetifier=true
           EOF
 
-      - name: Ensure Gradle Wrapper 8.4 Exists
+      - name: Ensure Gradle Wrapper 8.4
         run: |
-          mkdir -p ${{ env.working_dir }}/android/gradle/wrapper
-          cat << 'EOF' > ${{ env.working_dir }}/android/gradle/wrapper/gradle-wrapper.properties
+          mkdir -p ${{ env.target_dir }}/android/gradle/wrapper
+          cat << 'EOF' > ${{ env.target_dir }}/android/gradle/wrapper/gradle-wrapper.properties
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
           zipStoreBase=GRADLE_USER_HOME
@@ -52,25 +52,23 @@ jobs:
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
           EOF
 
-      - name: Clean Conflicting Legacy Files & Fix Manifest
+      - name: Clean Manifest Package Attribute
         run: |
-          MANIFEST_PATH="${{ env.working_dir }}/android/app/src/main/AndroidManifest.xml"
-          sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
-          if ! grep -q "android.permission.INTERNET" "$MANIFEST_PATH"; then
-            sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_PATH"
+          MANIFEST_PATH="${{ env.target_dir }}/android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
           fi
-          find ${{ env.working_dir }}/android/ -name "GeneratedPluginRegistrant.java" -exec rm -fv {} +
 
       - name: Get Dependencies
-        working-directory: ${{ env.working_dir }}
+        working-directory: ${{ env.target_dir }}
         run: flutter pub get
 
       - name: Build Release APK
-        working-directory: ${{ env.working_dir }}
+        working-directory: ${{ env.target_dir }}
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: SYNAPSE-AI-Release-APK
-          path: ${{ env.working_dir }}/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.target_dir }}/build/app/outputs/flutter-apk/app-release.apk
