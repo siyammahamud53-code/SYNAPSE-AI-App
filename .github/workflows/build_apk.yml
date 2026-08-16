@@ -59,9 +59,11 @@ jobs:
             sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
           fi
 
-      - name: Get Dependencies
+      - name: Force Clean Build Artifacts
         working-directory: ${{ env.target_dir }}
-        run: flutter pub get
+        run: |
+          flutter clean
+          flutter pub get
 
       - name: Build Release APK
         working-directory: ${{ env.target_dir }}
