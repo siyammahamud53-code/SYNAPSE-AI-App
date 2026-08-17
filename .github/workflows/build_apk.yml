@@ -27,6 +27,12 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.x'
 
+      # 🔥 এই পার্টটাই মিসিং ছিল: Gradle Wrapper 8.4 সেটআপ
+      - name: Setup Gradle Wrapper 8.4
+        run: |
+          cd android
+          ./gradlew wrapper --gradle-version 8.4
+
       - name: Enable AndroidX & Setup Properties
         run: |
           mkdir -p android
