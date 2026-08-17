@@ -27,7 +27,6 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.x'
 
-      # 🔥 সরাসরি Gradle Wrapper 8.4 প্রপার্টিজ ফাইল তৈরি
       - name: Force Create Gradle Wrapper 8.4
         run: |
           mkdir -p android/gradle/wrapper
@@ -48,8 +47,9 @@ jobs:
           android.enableJetifier=true
           EOF
 
-      - name: Force Clean Leftover Plugin Registrant
+      - name: Clean Conflicting Registrants
         run: |
+          rm -rf android/app/src/main/java/io/flutter/plugins/
           find android/ -name "GeneratedPluginRegistrant.java" -exec rm -fv {} + || true
 
       - name: Clean Project & Get Dependencies
