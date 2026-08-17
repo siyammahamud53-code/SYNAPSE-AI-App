@@ -27,11 +27,17 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.x'
 
-      # 🔥 এই পার্টটাই মিসিং ছিল: Gradle Wrapper 8.4 সেটআপ
-      - name: Setup Gradle Wrapper 8.4
+      # 🔥 সরাসরি Gradle Wrapper 8.4 প্রপার্টিজ ফাইল তৈরি
+      - name: Force Create Gradle Wrapper 8.4
         run: |
-          cd android
-          ./gradlew wrapper --gradle-version 8.4
+          mkdir -p android/gradle/wrapper
+          cat << 'EOF' > android/gradle/wrapper/gradle-wrapper.properties
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
+          EOF
 
       - name: Enable AndroidX & Setup Properties
         run: |
