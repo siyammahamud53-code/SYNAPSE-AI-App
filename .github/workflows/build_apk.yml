@@ -1,6 +1,10 @@
 name: Build Flutter Release APK
 
 on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -11,31 +15,22 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java SDK
+      - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
           channel: 'stable'
+          flutter-version: '3.22.x'
 
-      - name: Locate Working Directory
-        id: locate-dir
+      - name: Enable AndroidX & Setup Properties
         run: |
-          if [ -d "SYNAPSE-AI-App" ] && [ -f "SYNAPSE-AI-App/pubspec.yaml" ]; then
-            echo "target_dir=SYNAPSE-AI-App" >> $GITHUB_ENV
-          else
-            echo "target_dir=." >> $GITHUB_ENV
-          fi
-
-      - name: Enable AndroidX & Setup Gradle Properties
-        run: |
-          mkdir -p ${{ env.target_dir }}/android
-          cat << 'EOF' > ${{ env.target_dir }}/android/gradle.properties
+          mkdir -p android
+          cat << 'EOF' > android/gradle.properties
           org.gradle.jvmargs=-Xmx4608m
           android.useAndroidX=true
           android.enableJetifier=true
@@ -43,8 +38,8 @@ jobs:
 
       - name: Ensure Gradle Wrapper 8.4
         run: |
-          mkdir -p ${{ env.target_dir }}/android/gradle/wrapper
-          cat << 'EOF' > ${{ env.target_dir }}/android/gradle/wrapper/gradle-wrapper.properties
+          mkdir -p android/gradle/wrapper
+          cat << 'EOF' > android/gradle/wrapper/gradle-wrapper.properties
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
           zipStoreBase=GRADLE_USER_HOME
@@ -52,25 +47,20 @@ jobs:
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
           EOF
 
-      - name: Clean Manifest Package Attribute
+      - name: Force Clean Leftover Plugin Registrant
         run: |
-          MANIFEST_PATH="${{ env.target_dir }}/android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_PATH" ]; then
-            sed -i 's/package="[^"]*"//g' "$MANIFEST_PATH"
-          fi
+          find android/ -name "GeneratedPluginRegistrant.java" -exec rm -fv {} + || true
 
-      - name: Force Clean Build Artifacts
-        working-directory: ${{ env.target_dir }}
+      - name: Clean Project & Get Dependencies
         run: |
           flutter clean
           flutter pub get
 
       - name: Build Release APK
-        working-directory: ${{ env.target_dir }}
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: SYNAPSE-AI-Release-APK
-          path: ${{ env.target_dir }}/build/app/outputs/flutter-apk/app-release.apk
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
