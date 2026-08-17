@@ -1,11 +1,10 @@
 // ============================================================
 // SYNAPSE AI - DYNAMIC CAMERA & CALL-AWARE HUD INTERFACE
 // Features: On-Demand Gesture Camera & Smart Call Hardware Release
-// Optimized for GPU/CPU with No Camera Conflicts
+// Fixed: Runtime Exception & Initialization Crash
 // ============================================================
 
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +15,6 @@ class AppState extends ChangeNotifier {
   bool isListening = false;
   bool isSpeaking = false;
   
-  // Dynamic On-Demand Camera Activation (Zero Battery Waste & No Call Conflicts)
   bool isCameraGestureActive = false;
   String lastDetectedGesture = 'CAMERA OFF';
   CallState currentCallState = CallState.idle;
@@ -26,7 +24,6 @@ class AppState extends ChangeNotifier {
 
   String lastResponse = 'SYSTEM READY: Say "Open Gesture" to activate No-Touch Control.';
 
-  // Voice Command to trigger Air Gesture Camera (On Demand)
   void activateGestureOnCommand() {
     if (currentCallState != CallState.idle) {
       lastResponse = '⚠️ CALL IN PROGRESS: Camera gesture locked for Call Privacy!';
@@ -35,7 +32,7 @@ class AppState extends ChangeNotifier {
     }
     
     isCameraGestureActive = true;
-    gpuUsage = 45.0; // Allocating GPU for Computer Vision
+    gpuUsage = 45.0;
     lastDetectedGesture = 'WAITING FOR HAND...';
     lastResponse = '🖐️ AIR GESTURE ACTIVATED: Move hand 1-2 ft away!';
     notifyListeners();
@@ -43,17 +40,15 @@ class AppState extends ChangeNotifier {
 
   void deactivateGesture() {
     isCameraGestureActive = false;
-    gpuUsage = 8.0; // Releasing GPU to Low Power
+    gpuUsage = 8.0;
     lastDetectedGesture = 'CAMERA RELEASED';
     lastResponse = '🍃 GESTURE OFF: Camera released for standard system use.';
     notifyListeners();
   }
 
-  // Handle Incoming / Active Call Seamlessly
   void handleCallEvent(CallState state) {
     currentCallState = state;
     if (state != CallState.idle) {
-      // Release camera immediately to prevent hardware conflicts during calls
       isCameraGestureActive = false;
       lastDetectedGesture = 'CAMERA BUSY (IN-CALL)';
       lastResponse = '📞 CALL DETECTED: Camera & Mic released to Call Service.';
@@ -88,8 +83,10 @@ class HUDTheme {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppState(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppState()),
+      ],
       child: const SynapseApp(),
     ),
   );
@@ -103,7 +100,9 @@ class SynapseApp extends StatelessWidget {
     return MaterialApp(
       title: 'SYNAPSE CALL-SAFE HUD',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(scaffoldBackgroundColor: HUDTheme.background),
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: HUDTheme.background,
+      ),
       home: const HUDScreen(),
     );
   }
@@ -125,7 +124,14 @@ class _HUDScreenState extends State<HUDScreen> with SingleTickerProviderStateMix
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
-    )..repeat();
+    );
+    
+    // Safety delay to prevent UI thread crash on startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _rotationController.repeat();
+      }
+    });
   }
 
   @override
