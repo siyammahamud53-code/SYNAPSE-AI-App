@@ -28,27 +28,10 @@ class HUDScreen extends StatefulWidget {
   State<HUDScreen> createState() => _HUDScreenState();
 }
 
-class _HUDScreenState extends State<HUDScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _HUDScreenState extends State<HUDScreen> {
   bool isCameraActive = false;
   bool isListening = false;
   String statusText = 'SYSTEM READY: Standby Mode';
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    );
-    _controller.repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +39,7 @@ class _HUDScreenState extends State<HUDScreen> with SingleTickerProviderStateMix
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar
+            // Top Header Bar
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
@@ -71,38 +54,35 @@ class _HUDScreenState extends State<HUDScreen> with SingleTickerProviderStateMix
               ),
             ),
             
-            // Middle Reactor
+            // Middle Reactor Display
             Expanded(
               child: Center(
-                child: RotationTransition(
-                  turns: _controller,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: isCameraActive ? const Color(0xFF00FF88) : const Color(0xFF00F3FF), width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isCameraActive ? const Color(0xFF00FF88) : const Color(0xFF00F3FF)).withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        isCameraActive ? Icons.videocam : Icons.graphic_eq,
-                        size: 60,
-                        color: isCameraActive ? const Color(0xFF00FF88) : const Color(0xFF00F3FF),
-                      ),
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: isCameraActive ? const Color(0xFF00FF88) : const Color(0xFF00F3FF), width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isCameraActive ? const Color(0xFF00FF88) : const Color(0xFF00F3FF)).withOpacity(0.3),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      )
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isCameraActive ? Icons.videocam : Icons.graphic_eq,
+                      size: 60,
+                      color: isCameraActive ? const Color(0xFF00FF88) : const Color(0xFF00F3FF),
                     ),
                   ),
                 ),
               ),
             ),
 
-            // Status Card
+            // System Status Card
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(12),
@@ -117,7 +97,7 @@ class _HUDScreenState extends State<HUDScreen> with SingleTickerProviderStateMix
 
             const SizedBox(height: 12),
 
-            // Controls
+            // Controls Buttons
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
