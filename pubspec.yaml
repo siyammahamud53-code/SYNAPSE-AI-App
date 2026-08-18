@@ -1,5 +1,5 @@
 name: synapse_ai_app
-description: "SYNAPSE AI - Dynamic Camera & Call-Aware HUD Interface"
+description: "SYNAPSE AI Interface"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,7 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.1.2
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
