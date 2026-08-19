@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">SYNAPSE AI</string>
+    <string name="app_version">3.0.0</string>
+    
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_summary">SYNAPSE AI Accessibility Service</string>
+    <string name="accessibility_service_description">Provides autonomous OS control for SYNAPSE AI, enabling screen reading, gesture automation, and system interaction.</string>
+    
+    <!-- Foreground Service -->
+    <string name="foreground_service_channel">SYNAPSE AI Service</string>
+    <string name="foreground_service_description">SYNAPSE AI is running in the background</string>
+    <string name="foreground_notification_title">SYNAPSE AI Active</string>
+    <string name="foreground_notification_text">Processing AI tasks</string>
+    
+    <!-- Call Service -->
+    <string name="call_service_label">SYNAPSE AI Call Manager</string>
+    <string name="call_service_description">Manages calls with AI assistance</string>
+    
+    <!-- Permissions -->
+    <string name="permission_rationale_title">Permissions Required</string>
+    <string name="permission_rationale_message">SYNAPSE AI needs these permissions to provide full autonomous functionality.</string>
+    
+    <!-- System Messages -->
+    <string name="service_starting">Starting SYNAPSE AI services...</string>
+    <string name="service_running">SYNAPSE AI is running</string>
+    <string name="service_stopping">Stopping SYNAPSE AI services...</string>
+    <string name="service_stopped">SYNAPSE AI services stopped</string>
+    
+    <!-- Errors -->
+    <string name="error_generic">An error occurred</string>
+    <string name="error_network">Network connection error</string>
+    <string name="error_permission">Permission denied</string>
+    <string name="error_service">Service unavailable</string>
+    
+    <!-- UI Labels -->
+    <string name="button_start">Start</string>
+    <string name="button_stop">Stop</string>
+    <string name="button_enable">Enable</string>
+    <string name="button_disable">Disable</string>
+    <string name="button_settings">Settings</string>
+    <string name="button_back">Back</string>
+    <string name="button_retry">Retry</string>
+    <string name="button_ok">OK</string>
+    <string name="button_cancel">Cancel</string>
+    
+    <!-- Status -->
+    <string name="status_connected">Connected</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="status_connecting">Connecting...</string>
+    <string name="status_initializing">Initializing...</string>
+    
+    <!-- Dashboard -->
+    <string name="dashboard_title">SYNAPSE AI Dashboard</string>
+    <string name="dashboard_status">System Status</string>
+    <string name="dashboard_memory">Memory Usage</string>
+    <string name="dashboard_battery">Battery</string>
+    <string name="dashboard_mic">Microphone</string>
+    <string name="dashboard_connection">Connection</string>
+    
+    <!-- Provider Authorities -->
+    <string name="file_provider_authority">${applicationId}.fileprovider</string>
+    
+    <!-- Default Values -->
+    <string name="default_notification_channel_id">synapse_ai_channel</string>
+    <string name="default_notification_channel_name">SYNAPSE AI Notifications</string>
+    <string name="default_notification_channel_description">Notifications from SYNAPSE AI</string>
+    
+    <!-- Boot Receiver -->
+    <string name="boot_completed_message">SYNAPSE AI started on boot</string>
+</resources>
