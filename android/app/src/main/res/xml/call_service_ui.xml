@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InCallServiceConfiguration
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- UI Configuration for Call Service -->
+    <dialerConfiguration
+        android:defaultDialer="false"
+        android:isRadioTechnologicallyUpgraded="true"
+        android:supportsVideoCalling="true"
+        android:supportsVoiceCalling="true"
+        android:supportsConferenceCalling="true"
+        android:canManageCalls="true"
+        android:canCarryVoIPCalls="true"
+        android:canControlVideoFeatures="true"
+        android:showIncomingCallUi="true"
+        android:showInCallUi="true"
+        android:manageIncomingCalls="true" />
+    
+    <uiConfiguration
+        android:showCallDuration="true"
+        android:showCallState="true"
+        android:showCallerInfo="true"
+        android:showDialpadButton="true"
+        android:showMuteButton="true"
+        android:showSpeakerButton="true"
+        android:showHoldButton="true"
+        android:showMergeButton="true"
+        android:showSwapButton="true"
+        android:showAddCallButton="true"
+        android:showConferenceButton="true"
+        android:showVideoButton="true"
+        android:showEndCallButton="true"
+        android:showChatButton="true"
+        android:showSmsButton="true"
+        android:showContactsButton="true"
+        android:showCallbackNumberButton="true"
+        android:showIncomingCallAdditionalButtons="true" />
+    
+</InCallServiceConfiguration>
