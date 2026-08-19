@@ -1,67 +1,280 @@
-name: Build Flutter Release APK
+name: SYNAPSE AI Build & Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, develop, release/** ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+          - profile
+
+env:
+  FLUTTER_VERSION: '3.19.0'
+  JAVA_VERSION: '17'
+  ANDROID_SDK_VERSION: '34'
 
 jobs:
-  build:
+  build-android:
+    name: Build Android APK/AAB
     runs-on: ubuntu-latest
-
+    timeout-minutes: 45
+    
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup Java JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 'latest'
+
+      - name: Install Android Build Tools
+        run: |
+          sdkmanager "build-tools;34.0.0"
+          sdkmanager "platforms;android-34"
+          sdkmanager "platform-tools"
+          sdkmanager "extras;google;m2repository"
+          sdkmanager "extras;android;m2repository"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-          flutter-version: '3.22.x'
 
-      - name: Force Create Gradle Wrapper 8.4
+      - name: Verify Flutter
         run: |
-          mkdir -p android/gradle/wrapper
-          cat << 'EOF' > android/gradle/wrapper/gradle-wrapper.properties
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
+          flutter --version
+          flutter doctor -v
+
+      - name: Setup Environment Variables
+        run: |
+          echo "SYNAPSE_API_KEY=${{ secrets.SYNAPSE_API_KEY }}" >> $GITHUB_ENV
+          echo "SYNAPSE_WS_URL=${{ secrets.SYNAPSE_WS_URL }}" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+          echo "BUILD_VERSION=${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          SYNAPSE_API_KEY=${SYNAPSE_API_KEY}
+          SYNAPSE_WS_URL=${SYNAPSE_WS_URL}
+          SYNAPSE_ENV=production
           EOF
 
-      - name: Enable AndroidX & Setup Properties
+      - name: Decode Keystore
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          mkdir -p android
-          cat << 'EOF' > android/gradle.properties
-          org.gradle.jvmargs=-Xmx4608m
-          android.useAndroidX=true
-          android.enableJetifier=true
-          EOF
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks
 
-      - name: Clean Conflicting Registrants
+      - name: Create Key Properties
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
         run: |
-          rm -rf android/app/src/main/java/io/flutter/plugins/
-          find android/ -name "GeneratedPluginRegistrant.java" -exec rm -fv {} + || true
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=keystore.jks" >> android/key.properties
 
-      - name: Clean Project & Get Dependencies
+      - name: Get Dependencies
         run: |
           flutter clean
           flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: Build Release APK
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Generate Code
+        run: |
+          flutter gen-l10n
+          flutter pub run flutter_native_splash:create --path=splash_config.yaml
 
-      - name: Upload Release APK
+      - name: Build Android
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+        run: |
+          flutter build appbundle \
+            --release \
+            --dart-define=SYNAPSE_API_KEY=${{ secrets.SYNAPSE_API_KEY }} \
+            --dart-define=SYNAPSE_WS_URL=${{ secrets.SYNAPSE_WS_URL }} \
+            --dart-define=BUILD_NUMBER=${{ github.run_number }} \
+            --dart-define=COMMIT_SHA=${{ github.sha }} \
+            --obfuscate \
+            --split-debug-info=build/debug_info \
+            --no-tree-shake-icons \
+            --target-platform android-arm,android-arm64
+
+      - name: Build APK (Debug)
+        if: github.event.inputs.build_type != 'release' && github.ref != 'refs/heads/main'
+        run: |
+          flutter build apk \
+            --debug \
+            --split-per-abi \
+            --dart-define=SYNAPSE_API_KEY=${{ secrets.SYNAPSE_API_KEY }} \
+            --dart-define=SYNAPSE_WS_URL=${{ secrets.SYNAPSE_WS_URL }} \
+            --dart-define=BUILD_NUMBER=${{ github.run_number }}
+
+      - name: Sign APK (Release)
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+        run: |
+          cd android
+          ./gradlew bundleRelease --stacktrace
+
+      - name: Upload AAB Artifact
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: synapse-ai-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: synapse-ai-debug-apks
+          path: build/app/outputs/flutter-apk/app-*-debug.apk
+          retention-days: 30
+
+      - name: Upload Debug Symbols
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: synapse-debug-symbols
+          path: build/debug_info
+          retention-days: 30
+
+      - name: Create Release Notes
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+        run: |
+          echo "# SYNAPSE AI v3.0.0 Build ${{ github.run_number }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Build Information" >> release_notes.md
+          echo "- Commit: \`${{ github.sha }}\`" >> release_notes.md
+          echo "- Date: $(date -u)" >> release_notes.md
+          echo "- Branch: ${{ github.ref_name }}" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## Changes" >> release_notes.md
+          echo "- Full autonomous OS control" >> release_notes.md
+          echo "- Advanced AI processing" >> release_notes.md
+          echo "- Real-time WebSocket communication" >> release_notes.md
+          echo "- Background service optimization" >> release_notes.md
+
+      - name: Upload Release Notes
+        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release_notes.md
+          retention-days: 30
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: build-android
+    if: always()
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+
+      - name: Get Dependencies
+        run: |
+          flutter pub get
+          flutter pub run build_runner build
+
+      - name: Run Unit Tests
+        run: |
+          flutter test --coverage --test-randomize-ordering-seed=random
+
+      - name: Run Integration Tests
+        run: |
+          flutter drive --target=integration_test/app_test.dart
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+          retention-days: 7
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/test-results
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Firebase App Distribution
+    runs-on: ubuntu-latest
+    needs: build-android
+    if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download AAB
+        uses: actions/download-artifact@v4
+        with:
+          name: synapse-ai-release-aab
+          path: build/outputs
+
+      - name: Setup Firebase CLI
+        run: |
+          npm install -g firebase-tools
+          firebase --version
+
+      - name: Deploy to Firebase
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          firebase appdistribution:distribute \
+            build/outputs/app-release.aab \
+            --app ${{ secrets.FIREBASE_APP_ID }} \
+            --groups "testers,developers" \
+            --release-notes-file release_notes.md \
+            --token "$FIREBASE_TOKEN" \
+            --testers "siyammahamud53@gmail.com"
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          payload: |
+            {
+              "text": "SYNAPSE AI Build ${{ github.run_number }}: ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Build Status:* ${{ job.status }}\n*Version:* v3.0.0\n*Commit:* <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Artifacts:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
