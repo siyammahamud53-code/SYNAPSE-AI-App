@@ -101,6 +101,8 @@ jobs:
 
       - name: Generate Code
         run: |
+          mkdir -p .dart_tool/flutter_gen
+          echo "name: flutter_gen" > .dart_tool/flutter_gen/pubspec.yaml
           dart run build_runner build --delete-conflicting-outputs
           dart run flutter_native_splash:create
 
