@@ -42,8 +42,6 @@ android {
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-     defaultProperties {
-        }
     }
 
     buildTypes {
@@ -59,7 +57,6 @@ flutter {
     source "../.."
 }
 
-// থার্ড-পার্টি প্যাকেজের নেমস্পেস এরর ফিক্স করার জন্য এটি যোগ করা হলো
 subprojects {
     afterEvaluate { project ->
         if (project.hasProperty('android')) {
