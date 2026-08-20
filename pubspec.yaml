@@ -25,7 +25,7 @@ dependencies:
   # Networking & WebSocket
   http: ^1.1.0
   web_socket_channel: ^2.4.0
-  socket_io: ^1.0.2
+  socket_io: ^1.0.1
   dio: ^5.3.3
   retrofit: ^4.0.1
   json_annotation: ^4.8.1
