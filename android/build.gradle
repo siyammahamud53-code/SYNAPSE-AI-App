@@ -5,23 +5,18 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {
-    project.evaluationDependsOn(":app")
+    project.evaluationDependsOn(':app')
 }
 
-// এই অংশটি phone_state সহ যেকোনো পুরনো প্লাগইনের নেমস্পেস অটো-ফিক্স করবে
-subprojects { subproject ->
-    subproject.afterEvaluate {
-        if (subproject.hasProperty('android')) {
-            subproject.android {
-                if (namespace == null) {
-                    namespace subproject.group
-                }
-            }
+subprojects {
+    project.configurations.configureEach {
+        resolutionStrategy {
+            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
         }
     }
 }
