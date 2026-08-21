@@ -48,7 +48,7 @@ dependencies:
   
   # Native Integration
   flutter_phone_direct_caller: ^2.1.1
-  phone_state: ^1.0.1
+  phone_state: ^2.0.1  # <--- এখানে ১.০.১ বদলে ২.০.১ আপডেট করা হয়েছে
   screen_retriever: ^0.1.9
   window_manager: ^0.3.7
   permission_handler: ^11.0.1
