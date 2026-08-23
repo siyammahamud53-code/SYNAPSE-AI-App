@@ -20,7 +20,7 @@ on:
 env:
   FLUTTER_VERSION: '3.24.3'
   JAVA_VERSION: '17'
-  ANDROID_SDK_VERSION: '34'
+  ANDROID_SDK_VERSION: '35'
 
 jobs:
   build-android:
@@ -47,8 +47,8 @@ jobs:
 
       - name: Install Android Build Tools
         run: |
-          sdkmanager "build-tools;34.0.0"
-          sdkmanager "platforms;android-34"
+          sdkmanager "build-tools;35.0.0"
+          sdkmanager "platforms;android-35"
           sdkmanager "platform-tools"
           sdkmanager "extras;google;m2repository"
           sdkmanager "extras;android;m2repository"
