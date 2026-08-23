@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.synapse.ai_app"
-    compileSdk 34
+    compileSdk 35
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -39,7 +39,7 @@ android {
     defaultConfig {
         applicationId "com.synapse.ai_app"
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -54,5 +54,5 @@ android {
 }
 
 flutter {
-    source "../.."
+    source "../../"
 }
