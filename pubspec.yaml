@@ -79,11 +79,6 @@ dependencies:
   sensors_plus: ^4.0.0
   system_tray: ^2.0.3
   tray_manager: ^0.2.2
-  
-  # Code Generation
-  build_runner: ^2.4.7
-  freezed: ^2.4.5
-  freezed_annotation: ^2.4.1
 
 dependency_overrides:
   web_socket_channel: ^2.4.0
@@ -108,36 +103,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-  
-  # Assets
-  assets:
-    - assets/images/
-    - assets/icons/
-    - assets/fonts/
-    - assets/sounds/
-    - assets/models/
-    - assets/animations/
-    - assets/config/
-    - .env
-  
-  # Fonts
-  fonts:
-    - family: Orbitron
-      fonts:
-        - asset: assets/fonts/Orbitron-Regular.ttf
-        - asset: assets/fonts/Orbitron-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Orbitron-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Orbitron-SemiBold.ttf
-          weight: 600
-    - family: JetBrainsMono
-      fonts:
-        - asset: assets/fonts/JetBrainsMono-Regular.ttf
-        - asset: assets/fonts/JetBrainsMono-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/JetBrainsMono-Italic.ttf
-          style: italic
 
 flutter_native_splash:
   color: "#0A0A0F"
