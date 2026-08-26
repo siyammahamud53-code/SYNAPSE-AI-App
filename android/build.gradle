@@ -15,18 +15,14 @@ subprojects {
 }
 
 subprojects {
-    project.afterEvaluate {
-        if (project.hasProperty('android')) {
-            project.android {
-                compileSdkVersion 35
-            }
-        }
-            if (project.plugins.hasPlugin('com.android.library')) {
-                project.android {
+    subproject ->
+        subproject.beforeEvaluate {
+            if (subproject.hasProperty('android')) {
+                subproject.android {
                     compileSdkVersion 35
                 }
             }
-    }
+        }
 }
 
 tasks.register("clean", Delete) {
