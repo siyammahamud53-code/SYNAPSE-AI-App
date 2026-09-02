@@ -32,7 +32,6 @@ dependencies:
   
   # Audio & Speech
   speech_to_text: ^6.6.0
-  text_to_speech: ^0.2.2
   flutter_tts: ^3.8.2
   audio_session: ^0.1.16
   just_audio: ^0.9.36
