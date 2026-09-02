@@ -13,13 +13,15 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// এই রুলটি পুরনো বা নতুন সব থার্ডপার্টি প্লাগইনের compileSdk এরর ফিক্স করবে
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                compileSdkVersion 35
-            }
+subprojects { subproject ->
+    subproject.pluginManager.withPlugin('com.android.library') {
+        android {
+            compileSdkVersion 35
+        }
+    }
+    subproject.pluginManager.withPlugin('com.android.application') {
+        android {
+            compileSdkVersion 35
         }
     }
 }
