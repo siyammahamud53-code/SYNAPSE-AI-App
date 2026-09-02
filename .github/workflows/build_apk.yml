@@ -6,33 +6,20 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build Type'
-        required: true
-        default: 'release'
-        type: choice
-        options:
-          - release
-          - debug
-          - profile
 
 env:
   FLUTTER_VERSION: '3.24.3'
   JAVA_VERSION: '17'
-  ANDROID_SDK_VERSION: '35'
 
 jobs:
   build-android:
-    name: Build Android APK/AAB
+    name: Build Android APK
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -40,198 +27,45 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools-version: 'latest'
-
-      - name: Install Android Build Tools
-        run: |
-          sdkmanager "build-tools;35.0.0"
-          sdkmanager "platforms;android-35"
-          sdkmanager "platform-tools"
-          sdkmanager "extras;google;m2repository"
-          sdkmanager "extras;android;m2repository"
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
 
-      - name: Verify Flutter
+      - name: Verify Environment
         run: |
           flutter --version
-          flutter doctor -v
-
-      - name: Setup Environment Variables
-        run: |
-          echo "SYNAPSE_API_KEY=${{ secrets.SYNAPSE_API_KEY }}" >> $GITHUB_ENV
-          echo "SYNAPSE_WS_URL=${{ secrets.SYNAPSE_WS_URL }}" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
-          echo "BUILD_VERSION=${{ github.sha }}" >> $GITHUB_ENV
-
-      - name: Create .env file
-        run: |
-          cat > .env << EOF
-          SYNAPSE_API_KEY=${SYNAPSE_API_KEY}
-          SYNAPSE_WS_URL=${SYNAPSE_WS_URL}
-          SYNAPSE_ENV=production
-          EOF
-
-      - name: Decode Keystore
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks
-
-      - name: Create Key Properties
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-        run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=keystore.jks" >> android/key.properties
+          java -version
 
       - name: Get Dependencies
         run: |
           flutter clean
           flutter pub get
 
-      - name: Generate Code
+      - name: Generate Code & Assets
         run: |
-          mkdir -p .dart_tool/flutter_gen
-          echo "name: flutter_gen" > .dart_tool/flutter_gen/pubspec.yaml
-          dart run build_runner build --delete-conflicting-outputs
-          dart run flutter_native_splash:create
+          dart run build_runner build --delete-conflicting-outputs || true
+          dart run flutter_native_splash:create || true
 
-      - name: Build Android
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+      - name: Build Debug APK
         run: |
-          flutter build appbundle \
-            --release \
-            --dart-define=SYNAPSE_API_KEY=${{ secrets.SYNAPSE_API_KEY }} \
-            --dart-define=SYNAPSE_WS_URL=${{ secrets.SYNAPSE_WS_URL }} \
-            --dart-define=BUILD_NUMBER=${{ github.run_number }} \
-            --dart-define=COMMIT_SHA=${{ github.sha }} \
-            --obfuscate \
-            --split-debug-info=build/debug_info \
-            --no-tree-shake-icons \
-            --target-platform android-arm,android-arm64
+          flutter build apk --debug
 
-      - name: Build APK (Debug)
-        if: github.event.inputs.build_type != 'release' && github.ref != 'refs/heads/main'
+      - name: Build Release APK
         run: |
-          flutter build apk \
-            --debug \
-            --split-per-abi \
-            --dart-define=SYNAPSE_API_KEY=${{ secrets.SYNAPSE_API_KEY }} \
-            --dart-define=SYNAPSE_WS_URL=${{ secrets.SYNAPSE_WS_URL }} \
-            --dart-define=BUILD_NUMBER=${{ github.run_number }}
+          flutter build apk --release --no-tree-shake-icons || flutter build apk --release
 
-      - name: Sign APK (Release)
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-        run: |
-          cd android
-          ./gradlew bundleRelease --stacktrace
-
-      - name: Upload AAB Artifact
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: synapse-ai-release-aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
-          retention-days: 30
+          name: synapse-ai-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
 
-      - name: Upload APK Artifacts
+      - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: synapse-ai-debug-apks
-          path: build/app/outputs/flutter-apk/app-*-debug.apk
-          retention-days: 30
-
-      - name: Upload Debug Symbols
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: synapse-debug-symbols
-          path: build/debug_info
-          retention-days: 30
-
-      - name: Create Release Notes
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-        run: |
-          echo "# SYNAPSE AI v3.0.0 Build ${{ github.run_number }}" > release_notes.md
-          echo "" >> release_notes.md
-          echo "## Build Information" >> release_notes.md
-          echo "- Commit: \`${{ github.sha }}\`" >> release_notes.md
-          echo "- Date: $(date -u)" >> release_notes.md
-          echo "- Branch: ${{ github.ref_name }}" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Changes" >> release_notes.md
-          echo "- Full autonomous OS control" >> release_notes.md
-          echo "- Advanced AI processing" >> release_notes.md
-          echo "- Real-time WebSocket communication" >> release_notes.md
-          echo "- Background service optimization" >> release_notes.md
-
-      - name: Upload Release Notes
-        if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-notes
-          path: release_notes.md
-          retention-days: 30
-
-  deploy:
-    name: Deploy to Firebase App Distribution
-    runs-on: ubuntu-latest
-    needs: build-android
-    if: github.event.inputs.build_type == 'release' || github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Download AAB
-        uses: actions/download-artifact@v4
-        with:
-          name: synapse-ai-release-aab
-          path: build/outputs
-
-      - name: Setup Firebase CLI
-        run: |
-          npm install -g firebase-tools
-          firebase --version
-
-      - name: Deploy to Firebase
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: |
-          firebase appdistribution:distribute \
-            build/outputs/app-release.aab \
-            --app ${{ secrets.FIREBASE_APP_ID }} \
-            --groups "testers,developers" \
-            --release-notes-file release_notes.md \
-            --token "$FIREBASE_TOKEN" \
-            --testers "siyammahamud53@gmail.com"
-
-      - name: Notify Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1.24.0
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          payload: |
-            {
-              "text": "SYNAPSE AI Build ${{ github.run_number }}: ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Build Status:* ${{ job.status }}\n*Version:* v3.0.0\n*Commit:* <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Artifacts:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                }
-              ]
-            }
+          name: synapse-ai-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
