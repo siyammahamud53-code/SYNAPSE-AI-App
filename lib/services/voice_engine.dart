@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
+import 'dart0:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -13,13 +13,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 
-// Logger ইনস্ট্যান্স ডিফাইন করা হলো যাতে static error না আসে
 class Logger {
   static void info(String msg) => debugPrint('[INFO] $msg');
   static void warning(String msg) => debugPrint('[WARN] $msg');
   static void error(String msg, [dynamic stackTrace]) => debugPrint('[ERROR] $msg');
   static void debug(String msg) => debugPrint('[DEBUG] $msg');
 }
+
 class VoiceEngine extends ChangeNotifier {
   static final VoiceEngine _instance = VoiceEngine._internal();
   factory VoiceEngine() => _instance;
@@ -95,7 +95,6 @@ class VoiceEngine extends ChangeNotifier {
   Future<void> _initializeSpeechToText() async {
     try {
       final available = await _speechToText.initialize(
-        onDevice: true,
         onStatus: _handleSpeechStatus,
         onError: _handleSpeechError,
       );
@@ -221,7 +220,6 @@ class VoiceEngine extends ChangeNotifier {
         },
         listenFor: duration,
         pauseFor: const Duration(seconds: 1),
-        onDevice: true,
         localeId: _currentLanguage,
         partialResults: true,
       );
