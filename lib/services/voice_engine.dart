@@ -10,10 +10,16 @@ import 'package:record/record.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:synapse_ai/utils/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 
+// Logger ইনস্ট্যান্স ডিফাইন করা হলো যাতে static error না আসে
+class Logger {
+  static void info(String msg) => debugPrint('[INFO] $msg');
+  static void warning(String msg) => debugPrint('[WARN] $msg');
+  static void error(String msg, [dynamic stackTrace]) => debugPrint('[ERROR] $msg');
+  static void debug(String msg) => debugPrint('[DEBUG] $msg');
+}
 class VoiceEngine extends ChangeNotifier {
   static final VoiceEngine _instance = VoiceEngine._internal();
   factory VoiceEngine() => _instance;
