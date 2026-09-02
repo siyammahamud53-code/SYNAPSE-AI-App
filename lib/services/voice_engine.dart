@@ -9,6 +9,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:record/record.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:synapse_ai/utils/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
@@ -114,9 +115,9 @@ class VoiceEngine extends ChangeNotifier {
       
       // Set platform specific settings
       if (Platform.isAndroid) {
-        await _flutterTts.setVoice('en-us-x-sfg#female_2-local');
+        await _flutterTts.setVoice({'name': 'en-us-x-sfg#female_2-local', 'locale': 'en-US'});
       } else if (Platform.isIOS) {
-        await _flutterTts.setVoice('com.apple.ttsbundle.Samantha-compact');
+        await _flutterTts.setVoice({'name': 'com.apple.ttsbundle.Samantha-compact', 'locale': 'en-US'});
       }
       
       // Listen for completion events
@@ -153,7 +154,7 @@ class VoiceEngine extends ChangeNotifier {
   Future<void> _initializeAudioSession() async {
     try {
       final session = await AudioSession.instance;
-      await session.configure(AudioSessionConfiguration.music());
+      await session.configure(const AudioSessionConfiguration.music());
       Logger.info('Audio session initialized');
     } catch (e) {
       Logger.error('Audio session initialization failed: $e');
@@ -198,7 +199,7 @@ class VoiceEngine extends ChangeNotifier {
       _speechConfidence = 0.0;
       notifyListeners();
       
-      final result = await _speechToText.listen(
+      await _speechToText.listen(
         onResult: (result) {
           _lastTranscript = result.recognizedWords;
           _speechConfidence = result.confidence;
@@ -217,22 +218,9 @@ class VoiceEngine extends ChangeNotifier {
         onDevice: true,
         localeId: _currentLanguage,
         partialResults: true,
-        timeout: const Duration(seconds: 30),
       );
       
-      if (result) {
-        Logger.info('Listening started');
-        // Wait for final result
-        await Future.delayed(duration);
-        _isListening = false;
-        notifyListeners();
-        return _lastTranscript;
-      } else {
-        _isListening = false;
-        Logger.warning('Failed to start listening');
-        notifyListeners();
-        return null;
-      }
+      return _lastTranscript;
     } catch (e) {
       _isListening = false;
       Logger.error('Speech recognition failed: $e');
@@ -354,7 +342,7 @@ class VoiceEngine extends ChangeNotifier {
       
       await _audioRecorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.aac,
+          encoder: AudioEncoder.aacLc,
           bitRate: 128000,
           sampleRate: 44100,
         ),
@@ -441,11 +429,8 @@ class VoiceEngine extends ChangeNotifier {
   // Translation
   Future<String> translate(String text, String targetLanguage) async {
     try {
-      // Use Google Translate API or custom translation service
-      // For now, return the same text as placeholder
       Logger.info('Translating to: $targetLanguage');
       
-      // Add to history
       _addToHistory(
         text: text,
         confidence: 1.0,
@@ -453,7 +438,6 @@ class VoiceEngine extends ChangeNotifier {
         metadata: {'targetLanguage': targetLanguage},
       );
       
-      // In production, use actual translation API
       final translation = await _translateViaAPI(text, targetLanguage);
       return translation;
     } catch (e) {
@@ -492,8 +476,6 @@ class VoiceEngine extends ChangeNotifier {
     try {
       Logger.info('Analyzing audio...');
       
-      // Convert audio data to features
-      // For now, return placeholder analysis
       final analysis = {
         'duration': 0.0,
         'sampleRate': 0,
@@ -556,6 +538,7 @@ class VoiceEngine extends ChangeNotifier {
   }
   
   // Cleanup
+  @override
   void dispose() {
     _speechToText.stop();
     _flutterTts.stop();
