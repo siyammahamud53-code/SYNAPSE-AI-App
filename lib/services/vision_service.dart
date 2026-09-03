@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:tflite_flutter_plus/tflite_flutter_plus.dart'; // Fixed: Changed to tflite_flutter_plus
 import 'package:path_provider/path_provider.dart';
 import 'package:synapse_ai/utils/logger.dart';
 import 'package:image/image.dart' as img;
@@ -563,6 +563,7 @@ class VisionService extends ChangeNotifier {
   }
   
   // Cleanup
+  @override
   void dispose() {
     _cameraController?.dispose();
     _faceDetector?.close();
