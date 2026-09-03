@@ -6,9 +6,11 @@ allprojects {
 }
 
 rootProject.buildDir = '../build'
+
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+
 subprojects {
     project.evaluationDependsOn(':app')
 }
@@ -16,14 +18,24 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+// TFLite সহ যেসব প্যাকেজে namespace নেই, সেগুলোতে অটোমেটিক namespace ও compileSdkVersion বসানোর ফিক্স
 subprojects {
-    afterEvaluate { project ->
+    def configureAndroid = {
         if (project.hasProperty('android')) {
             project.android {
-                if (namespace == null) {
-                    namespace project.group
+                if (namespace == null || namespace.isEmpty()) {
+                    namespace = "com.fix.namespace.${project.name.replaceAll('[^a-zA-Z0-9_]', '_')}"
                 }
             }
+        }
+    }
+
+    if (project.state.executed) {
+        configureAndroid()
+    } else {
+        project.afterEvaluate {
+            configureAndroid()
         }
     }
 }
