@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart0:convert';
+import 'dart:convert'; // Fixed: Typo fixed from dart0:convert
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -344,12 +344,9 @@ class VoiceEngine extends ChangeNotifier {
         return null;
       }
       
+      // Fixed: Updated to work with latest Record package configuration
       await _audioRecorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-        ),
+        const RecordConfig(),
         path: recordPath,
       );
       
