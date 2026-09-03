@@ -83,6 +83,10 @@ dependency_overrides:
   record_android: 1.2.6
   web_socket_channel: ^2.4.0
   intl: ^0.19.0
+  tflite_flutter:
+    git:
+      url: https://github.com/amg-s/tflite_flutter_plus.git
+      ref: main
 
 dev_dependencies:
   flutter_test:
