@@ -26,14 +26,3 @@ plugins {
 }
 
 include ":app"
-
-// Force namespace for older Flutter plugins in AGP 8+
-gradle.beforeProject { project ->
-    project.plugins.withId("com.android.library") {
-        android {
-            if (namespace == null) {
-                namespace = "com.fix." + project.name.replaceAll("-", "_")
-            }
-        }
-    }
-}
