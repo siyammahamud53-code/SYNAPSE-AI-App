@@ -13,19 +13,6 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-// ১০০% নিশ্চিত সলিউশন: AGP 8+ namespace ফিক্স
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                if (namespace == null) {
-                    namespace project.group ?: 'com.example.' + project.name.replaceAll('-', '_')
-                }
-            }
-        }
-    }
-}
-
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
