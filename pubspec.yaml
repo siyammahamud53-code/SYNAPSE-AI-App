@@ -42,7 +42,7 @@ dependencies:
   camera: ^0.10.5
   image_picker: ^1.0.4
   google_ml_kit: ^0.16.1
-  tflite_flutter: ^0.10.4 # Fixed: Replaced tflite_flutter_plus with official tflite_flutter
+  tflite_flutter: 0.10.1 # Fixed: Changed to stable version
   flutter_image_compress: ^2.1.0
   
   # Native Integration
