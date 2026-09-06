@@ -109,7 +109,7 @@ class VisionService extends ChangeNotifier {
       
       _textRecognizer = GoogleMlKit.vision.textRecognizer();
       
-      _poseDetector = GoogleMlKit.vision.poseDetector(
+      _poseDetector = GoogleMlKit.vision.poseDetector();
         PoseDetectorOptions(
           mode: PoseDetectionMode.single,
         ),
