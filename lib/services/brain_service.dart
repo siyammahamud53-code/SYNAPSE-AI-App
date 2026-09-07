@@ -62,7 +62,7 @@ class BrainService extends ChangeNotifier {
                    DateTime.now().millisecondsSinceEpoch.toString();
       _deviceId = prefs.getString('device_id') ?? 'synapse_ai_device';
       
-      // Connectivity listener (Fixed for List / Single Object)
+      // Fixed Connectivity listener
       Connectivity().onConnectivityChanged.listen((results) {
         bool isDisconnected = false;
         if (results is List) {
@@ -450,7 +450,7 @@ class BrainService extends ChangeNotifier {
       case 'task':
         final taskName = params['taskName'] ?? '';
         final result = await _backgroundService.executeTask(taskName, params);
-        _sendResult(command.id, {'result': result}); // Fixed void value error
+        _sendResult(command.id, {'result': result}); // Fixed void return type issue
         break;
       case 'schedule':
         final taskName = params['taskName'] ?? '';
