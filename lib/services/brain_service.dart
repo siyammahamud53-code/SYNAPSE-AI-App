@@ -450,7 +450,7 @@ class BrainService extends ChangeNotifier {
       case 'task':
         final taskName = params['taskName'] ?? '';
         final result = await _backgroundService.executeTask(taskName, params);
-        _sendResult(command.id, {'result': result}); // Fixed void return type issue
+        _sendResult(command.id, {'result': result});
         break;
       case 'schedule':
         final taskName = params['taskName'] ?? '';
