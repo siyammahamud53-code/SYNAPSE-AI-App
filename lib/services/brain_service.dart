@@ -1,4 +1,3 @@
-import 'package:synapse_ai/utils/logger.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -100,8 +99,15 @@ class BrainService extends ChangeNotifier {
   }
 
   Future<void> checkConnectivity() async {
-    final List<ConnectivityResult> results = await _connectivity.checkConnectivity();
-    final bool isDisconnected = results.contains(ConnectivityResult.none);
+    final dynamic result = await _connectivity.checkConnectivity();
+    bool isDisconnected = false;
+
+    if (result is List) {
+      isDisconnected = result.contains(ConnectivityResult.none);
+    } else {
+      isDisconnected = (result == ConnectivityResult.none);
+    }
+
     if (isDisconnected) {
       Logger.info('Device is offline');
     }
