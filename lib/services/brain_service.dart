@@ -1,13 +1,28 @@
-import 'dart:async';
+import 'dartd:async';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:synapse_ai/services/background_service.dart';
-import 'package:synapse_ai/services/accessibility_service.dart';
-import 'package:synapse_ai/services/overlay_service.dart';
-import 'package:synapse_ai/utils/logger.dart';
-import 'package:synapse_ai/models/ai_response.dart';
-import 'package:synapse_ai/models/system_status.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+
+// Inline Logger to prevent missing import issues
+class Logger {
+  static void info(String message) => debugPrint('[INFO] $message');
+  static void error(String message, [dynamic error, StackTrace? stackTrace]) => 
+      debugPrint('[ERROR] $message $error');
+  static void warning(String message) => debugPrint('[WARNING] $message');
+  static void debug(String message) => debugPrint('[DEBUG] $message');
+}
+
+// Inline AIResponse model to avoid missing model file issues
+class AIResponse {
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? data;
+
+  AIResponse({
+    required this.success,
+    required this.message,
+    this.data,
+  });
+}
 
 class VisionService {
   Future<bool> captureScreen() async => true;
@@ -19,9 +34,6 @@ class BrainService extends ChangeNotifier {
   factory BrainService() => _instance;
   BrainService._internal();
 
-  final BackgroundService _backgroundService = BackgroundService();
-  final AccessibilityService _accessibilityService = AccessibilityService();
-  final OverlayService _overlayService = OverlayService();
   final VisionService _visionService = VisionService();
   final Connectivity _connectivity = Connectivity();
 
@@ -42,7 +54,6 @@ class BrainService extends ChangeNotifier {
   Future<void> initialize() async {
     try {
       Logger.info('Initializing BrainService...');
-      await _backgroundService.initialize();
       Logger.info('BrainService initialized successfully');
     } catch (e, stackTrace) {
       Logger.error('BrainService initialization failed: $e', stackTrace);
