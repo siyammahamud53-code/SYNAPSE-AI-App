@@ -1,3 +1,4 @@
+import 'package:synapse_ai/utils/logger.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
