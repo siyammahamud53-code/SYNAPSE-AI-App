@@ -1,8 +1,7 @@
-import 'dartd:async';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-// Inline Logger to prevent missing import issues
 class Logger {
   static void info(String message) => debugPrint('[INFO] $message');
   static void error(String message, [dynamic error, StackTrace? stackTrace]) => 
@@ -11,7 +10,6 @@ class Logger {
   static void debug(String message) => debugPrint('[DEBUG] $message');
 }
 
-// Inline AIResponse model to avoid missing model file issues
 class AIResponse {
   final bool success;
   final String message;
