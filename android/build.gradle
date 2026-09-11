@@ -1,3 +1,16 @@
+buildscript {
+    ext.kotlin_version = '1.9.0'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -19,7 +32,6 @@ tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
 
-// TFLite সহ যেসব প্যাকেজে namespace নেই, সেগুলোতে অটোমেটিক namespace ও compileSdkVersion বসানোর ফিক্স
 subprojects {
     def configureAndroid = {
         if (project.hasProperty('android')) {
@@ -27,6 +39,7 @@ subprojects {
                 if (namespace == null || namespace.isEmpty()) {
                     namespace = "com.fix.namespace.${project.name.replaceAll('[^a-zA-Z0-9_]', '_')}"
                 }
+                compileSdkVersion 35
             }
         }
     }
