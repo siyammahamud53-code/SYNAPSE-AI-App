@@ -79,6 +79,9 @@ dependencies:
   system_tray: ^2.0.3
   tray_manager: ^0.2.2
 
+dependency_overrides:
+  record_android: ^1.2.11
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
