@@ -40,7 +40,7 @@ jobs:
 
       - name: Auto Re-Create Native Files & Repair
         run: |
-          flutter create . --platforms=android
+          flutter create . --platforms=android --project-name=synapse_ai_app --org=com.synapse_ai
 
       - name: Get Dependencies
         run: |
