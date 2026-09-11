@@ -38,6 +38,10 @@ jobs:
           flutter --version
           java -version
 
+      - name: Auto Re-Create Native Files & Repair
+        run: |
+          flutter create . --platforms=android
+
       - name: Get Dependencies
         run: |
           flutter clean
