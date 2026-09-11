@@ -32,13 +32,15 @@ tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
 
+// tflite_flutter সহ যেসব লাইব্রেরিতে namespace নেই, সেগুলোতে অটো নেমস্পেস ফিক্স
 subprojects {
-    subproject ->
+    afterEvaluate { subproject ->
         if (subproject.hasProperty('android')) {
             subproject.android {
                 if (namespace == null || namespace.isEmpty()) {
-                    namespace = "com.fix.namespace.${subproject.name.replaceAll('[^a-zA-Z0-9_]', '_')}"
+                    namespace = "com.fix.namespace." + subproject.name.replaceAll('[^a-zA-Z0-9_]', '_')
                 }
             }
         }
+    }
 }
