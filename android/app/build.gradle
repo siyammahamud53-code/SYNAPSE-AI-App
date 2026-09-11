@@ -23,9 +23,8 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.synapse.ai_app"
-    compileSdk 35
-    ndkVersion flutter.ndkVersion
+    namespace "com.synapse_ai_app"
+    compileSdk 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -33,13 +32,13 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = '17'
     }
 
     defaultConfig {
-        applicationId "com.synapse.ai_app"
+        applicationId "com.synapse_ai_app"
         minSdkVersion 23
-        targetSdkVersion 35
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -54,19 +53,9 @@ android {
 }
 
 flutter {
-    source "../../"
-}
-subprojects {
-    project.configurations.all {
-        resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == 'com.android.tools.build' && details.requested.name == 'gradle') {
-                details.useVersion '8.1.2'
-            }
-        }
-    }
+    source "../.."
 }
 
-// অটোমেটিক Missing Namespace & CompileSdk ফিক্স
 subprojects {
     afterEvaluate { subproject ->
         if (subproject.hasProperty('android')) {
