@@ -1,11 +1,8 @@
-import 'package:synapse_ai/utils/logger.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:synapse_ai/providers/app_state.dart';
-import 'package:synapse_ai/utils/logger.dart';
 import 'package:synapse_ai/models/task.dart';
 import 'package:synapse_ai/models/system_status.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,6 +10,15 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:screen_retriever/screen_retriever.dart';
+
+// Inline Logger Class (যাতে অন্য কোনো ফাইলের ওপর নির্ভর করতে না হয়)
+class Logger {
+  static void info(String message) => debugPrint('[INFO] $message');
+  static void error(String message, [dynamic error, StackTrace? stackTrace]) => 
+      debugPrint('[ERROR] $message $error');
+  static void warning(String message) => debugPrint('[WARNING] $message');
+  static void debug(String message) => debugPrint('[DEBUG] $message');
+}
 
 class BackgroundService extends ChangeNotifier {
   static final BackgroundService _instance = BackgroundService._internal();
@@ -90,11 +96,6 @@ class BackgroundService extends ChangeNotifier {
       _batteryLevel = await _battery.batteryLevel;
       final batteryState = await _battery.batteryState;
       _isCharging = batteryState == BatteryState.charging;
-
-      final appState = AppState();
-      appState.updateMetric('battery', _batteryLevel);
-      appState.updateMetric('isCharging', _isCharging);
-
       notifyListeners();
     } catch (e) {
       Logger.error('Failed to update metrics: $e');
