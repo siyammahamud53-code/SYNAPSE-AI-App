@@ -33,22 +33,12 @@ tasks.register("clean", Delete) {
 }
 
 subprojects {
-    def configureAndroid = {
-        if (project.hasProperty('android')) {
-            project.android {
+    subproject ->
+        if (subproject.hasProperty('android')) {
+            subproject.android {
                 if (namespace == null || namespace.isEmpty()) {
-                    namespace = "com.fix.namespace.${project.name.replaceAll('[^a-zA-Z0-9_]', '_')}"
+                    namespace = "com.fix.namespace.${subproject.name.replaceAll('[^a-zA-Z0-9_]', '_')}"
                 }
-                compileSdkVersion 35
             }
         }
-    }
-
-    if (project.state.executed) {
-        configureAndroid()
-    } else {
-        project.afterEvaluate {
-            configureAndroid()
-        }
-    }
 }
