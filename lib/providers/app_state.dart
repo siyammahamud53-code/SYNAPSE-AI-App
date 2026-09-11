@@ -1,8 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:synapse_ai/models/device_info.dart';
-import 'package:synapse_ai/models/system_status.dart';
+
+// Dummy models created to satisfy types if missing
+class DeviceInfo {
+  final String deviceId;
+  DeviceInfo({required this.deviceId});
+}
+
+class SystemStatus {
+  static SystemStatus initial() => SystemStatus();
+}
 
 class AppState extends ChangeNotifier {
   static const String _prefsKey = 'synapse_ai_state';
