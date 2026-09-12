@@ -16,39 +16,28 @@ dependencies:
     sdk: flutter
   intl: ^0.19.0
   
-  # State Management & Providers
+  # State Management
   provider: ^6.1.1
-  riverpod: ^2.4.0
-  flutter_riverpod: ^2.4.0
-  riverpod_annotation: ^2.2.0
   
   # Networking & WebSocket
   http: ^1.1.0
   web_socket_channel: ^2.4.0
-  socket_io: ^1.0.1
   dio: ^5.3.3
-  retrofit: ^4.0.1
   json_annotation: ^4.8.1
   
-  # Audio & Speech
+  # Audio & Speech (JARVIS Voice Engine)
   speech_to_text: ^6.6.0
   flutter_tts: ^3.8.2
   audio_session: ^0.1.21
   just_audio: ^0.9.36
-  flutter_sound: ^9.14.0
   
-  # Camera & Vision
+  # Camera & Storage
   camera: ^0.10.5
   image_picker: ^1.0.4
-  google_mlkit_text_recognition: ^0.11.0
-  google_mlkit_object_detection: ^0.11.0
   flutter_image_compress: ^2.1.0
   
-  # Native Integration
+  # Native Integration & Services
   flutter_phone_direct_caller: ^2.1.1
-  phone_state: ^2.0.1
-  screen_retriever: ^0.1.9
-  window_manager: ^0.3.7
   permission_handler: ^11.0.1
   flutter_native_splash: ^2.3.8
   flutter_local_notifications: ^16.1.0
@@ -60,44 +49,25 @@ dependencies:
   lottie: ^2.7.0
   shimmer: ^3.0.0
   animated_text_kit: ^4.2.2
-  glass_kit: ^3.0.0
-  flutter_neumorphic_plus: ^3.1.0
-  flutter_carousel_slider: ^1.1.0
-  flutter_staggered_animations: ^1.1.0
   
   # Utilities
   shared_preferences: ^2.2.2
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
   path_provider: ^2.1.0
   connectivity_plus: ^5.0.1
   device_info_plus: ^9.1.1
   package_info_plus: ^4.2.0
   battery_plus: ^5.0.0
   sensors_plus: ^4.0.0
-  system_tray: ^2.0.3
-  tray_manager: ^0.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
-  integration_test:
-    sdk: flutter
-  mockito: ^5.4.3
-  test: ^1.24.9
-  very_good_analysis: ^5.1.0
-  
-  # Code Generation & Build Tools
   build_runner: ^2.4.9
-  retrofit_generator: ^7.0.8
   json_serializable: ^6.7.1
-  riverpod_generator: ^2.3.10
-  hive_generator: ^2.0.1
 
 flutter:
   uses-material-design: true
-  generate: true
 
 flutter_native_splash:
   color: "#0A0A0F"
