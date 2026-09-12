@@ -43,9 +43,8 @@ jobs:
           flutter clean
           flutter pub get
 
-      - name: Generate Code & Assets
+      - name: Generate Assets
         run: |
-          dart run build_runner build --delete-conflicting-outputs || true
           dart run flutter_native_splash:create || true
 
       - name: Build Debug APK
