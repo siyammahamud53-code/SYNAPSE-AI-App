@@ -38,14 +38,9 @@ jobs:
           flutter --version
           java -version
 
-      - name: Auto Re-Create Native Files & Repair
-        run: |
-          flutter create . --platforms=android --project-name=synapse_ai_app --org=com.synapse_ai
-
       - name: Get Dependencies
         run: |
           flutter clean
-          flutter pub upgrade
           flutter pub get
 
       - name: Generate Code & Assets
