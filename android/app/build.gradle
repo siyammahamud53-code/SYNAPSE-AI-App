@@ -55,16 +55,3 @@ android {
 flutter {
     source "../.."
 }
-
-subprojects {
-    afterEvaluate { subproject ->
-        if (subproject.hasProperty('android')) {
-            subproject.android {
-                if (namespace == null) {
-                    namespace = "com.fix." + subproject.name.replaceAll("-", "_")
-                }
-                compileSdkVersion 35
-            }
-        }
-    }
-}
