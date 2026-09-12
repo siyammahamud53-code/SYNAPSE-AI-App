@@ -24,23 +24,31 @@ subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 
+// সাব-প্রজেক্ট কনফিগারেশন: tflite_flutter সহ সব থার্ড-পার্টি প্যাকেজের Safe Namespace Injector
+subprojects { p ->
+    def configureProject = {
+        if (p.hasProperty('android')) {
+            p.android {
+                if (namespace == null || namespace.isEmpty()) {
+                    namespace = "com.fix.namespace." + p.name.replaceAll('[^a-zA-Z0-9_]', '_')
+                }
+            }
+        }
+    }
+
+    if (p.state.executed) {
+        configureProject()
+    } else {
+        p.afterEvaluate {
+            configureProject()
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
-}
-
-// tflite_flutter সহ যেসব লাইব্রেরিতে namespace নেই, সেগুলোতে অটো নেমস্পেস ফিক্স
-subprojects {
-    afterEvaluate { subproject ->
-        if (subproject.hasProperty('android')) {
-            subproject.android {
-                if (namespace == null || namespace.isEmpty()) {
-                    namespace = "com.fix.namespace." + subproject.name.replaceAll('[^a-zA-Z0-9_]', '_')
-                }
-            }
-        }
-    }
 }
