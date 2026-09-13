@@ -42,6 +42,8 @@ dependencies:
   flutter_native_splash: ^2.3.8
   flutter_local_notifications: ^16.1.0
   workmanager: ^0.5.1
+  screen_retriever: ^0.1.9
+  window_manager: ^0.3.7
   
   # UI Components
   google_fonts: ^6.1.0
