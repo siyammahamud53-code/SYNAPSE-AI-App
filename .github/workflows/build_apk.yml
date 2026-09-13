@@ -33,38 +33,18 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
 
-      - name: Verify Environment
-        run: |
-          flutter --version
-          java -version
-
       - name: Get Dependencies
         run: |
           flutter clean
           flutter pub get
 
-      - name: Generate Assets
-        run: |
-          dart run flutter_native_splash:create || true
-
       - name: Build Debug APK
         run: |
           flutter build apk --debug
-
-      - name: Build Release APK
-        run: |
-          flutter build apk --release --no-tree-shake-icons || flutter build apk --release
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: synapse-ai-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 14
-
-      - name: Upload Release APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: synapse-ai-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
