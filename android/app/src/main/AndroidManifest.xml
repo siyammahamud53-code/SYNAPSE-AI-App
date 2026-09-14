@@ -66,15 +66,11 @@
     </queries>
 
     <application
-        android:name=".SynapseApplication"
+        android:name="${applicationName}"
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="SYNAPSE AI"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SynapseAI"
+        android:theme="@android:style/Theme.Light.NoTitleBar"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
@@ -84,7 +80,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.SynapseAI"
+            android:theme="@android:style/Theme.Light.NoTitleBar"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
@@ -119,9 +115,6 @@
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
         </service>
 
         <!-- Call Service -->
@@ -133,9 +126,6 @@
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
             </intent-filter>
-            <meta-data
-                android:name="android.telecom.IN_CALL_SERVICE_UI"
-                android:resource="@xml/call_service_ui" />
         </service>
 
         <!-- File Provider -->
@@ -144,9 +134,6 @@
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
         </provider>
 
         <!-- Receivers for Boot and Connectivity -->
@@ -174,10 +161,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        
-        <meta-data
-            android:name="io.flutter.embedding.engine.SplashScreenDrawable"
-            android:resource="@drawable/launch_background" />
         
     </application>
 
