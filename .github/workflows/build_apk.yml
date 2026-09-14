@@ -41,7 +41,7 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          flutter build apk --debug --no-shrink
+          flutter build apk --debug --no-shrink -- --stacktrace
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
