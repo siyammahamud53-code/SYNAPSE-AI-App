@@ -40,7 +40,7 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          flutter build apk --debug --verbose
+          flutter build apk --debug
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
