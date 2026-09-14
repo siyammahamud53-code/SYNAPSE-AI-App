@@ -32,7 +32,6 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-          cache: true
 
       - name: Get Dependencies
         run: |
@@ -41,7 +40,7 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          flutter build apk --debug --no-shrink -- --stacktrace
+          flutter build apk --debug --verbose
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
