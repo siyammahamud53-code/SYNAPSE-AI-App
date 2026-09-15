@@ -18,5 +18,5 @@ tasks.register("clean", Delete) {
 }
 
 ext {
-    kotlin_version = '2.1.0'
+    kotlin_version = '1.9.24'
 }
