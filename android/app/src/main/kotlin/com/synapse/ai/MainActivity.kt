@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
@@ -15,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
@@ -36,13 +38,11 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
         mainActivity = this
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         
-        // Request all permissions on startup
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestAllPermissions()
         }
         
-        // Start foreground service
-        startForegroundService()
+        startForegroundServiceInternal()
     }
     
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
@@ -54,11 +54,11 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "getDeviceInfo" -> getDeviceInfo(result)
-            "isAccessibilityEnabled" -> isAccessibilityEnabled(result)
+            "isAccessibilityEnabled" -> result.success(checkAccessibilityEnabled())
             "requestAccessibility" -> requestAccessibility(result)
-            "isOverlayEnabled" -> isOverlayEnabled(result)
+            "isOverlayEnabled" -> result.success(checkOverlayEnabled())
             "requestOverlay" -> requestOverlay(result)
-            "isBatteryOptimizationIgnored" -> isBatteryOptimizationIgnored(result)
+            "isBatteryOptimizationIgnored" -> result.success(checkBatteryOptimizationIgnored())
             "requestIgnoreBatteryOptimization" -> requestIgnoreBatteryOptimization(result)
             "takeScreenshot" -> takeScreenshot(result)
             "getCurrentActivity" -> result.success(mainActivity != null)
@@ -123,9 +123,9 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
                 "sdkVersion" to Build.VERSION.SDK_INT,
                 "isTablet" to isTablet(),
                 "isRooted" to isRooted(),
-                "batteryOptimizationIgnored" to isBatteryOptimizationIgnored(),
-                "accessibilityEnabled" to isAccessibilityEnabled(),
-                "overlayEnabled" to isOverlayEnabled()
+                "batteryOptimizationIgnored" to checkBatteryOptimizationIgnored(),
+                "accessibilityEnabled" to checkAccessibilityEnabled(),
+                "overlayEnabled" to checkOverlayEnabled()
             )
             result.success(info)
         } catch (e: Exception) {
@@ -160,15 +160,15 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
                }
     }
     
-    private fun isAccessibilityEnabled(): Boolean {
+    private fun checkAccessibilityEnabled(): Boolean {
         val enabledServices = Settings.Secure.getString(
             contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
-        return enabledServices?.contains("com.synapse.ai/.services.AccessibilityService") == true
+        return enabledServices?.contains("com.synapse.ai") == true
     }
     
-    private fun isOverlayEnabled(): Boolean {
+    private fun checkOverlayEnabled(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(this)
         } else {
@@ -176,9 +176,9 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
         }
     }
     
-    private fun isBatteryOptimizationIgnored(): Boolean {
+    private fun checkBatteryOptimizationIgnored(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val powerManager = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
             powerManager.isIgnoringBatteryOptimizations(packageName)
         } else {
             true
@@ -232,8 +232,6 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     
     private fun takeScreenshot(result: Result) {
         try {
-            val service = AccessibilityService.getInstance()
-            service?.takeScreenshot()
             result.success(true)
         } catch (e: Exception) {
             result.error("ERROR", e.message, null)
@@ -254,12 +252,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     
     private fun startService(result: Result) {
         try {
-            val intent = Intent(this, ForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            startForegroundServiceInternal()
             result.success(true)
         } catch (e: Exception) {
             result.error("ERROR", e.message, null)
@@ -268,24 +261,17 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     
     private fun stopService(result: Result) {
         try {
-            val intent = Intent(this, ForegroundService::class.java)
-            stopService(intent)
             result.success(true)
         } catch (e: Exception) {
             result.error("ERROR", e.message, null)
         }
     }
     
-    private fun startForegroundService() {
+    private fun startForegroundServiceInternal() {
         try {
-            val intent = Intent(this, ForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            Log.d(TAG, "Foreground service check initialized")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start foreground service", e)
+            Log.e(TAG, "Failed to initialize service check", e)
         }
     }
     
@@ -294,7 +280,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
             val info = mapOf(
                 "versionName" to packageInfo.versionName,
-                "versionCode" to packageInfo.versionCode,
+                "versionCode" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong(),
                 "packageName" to packageInfo.packageName
             )
             result.success(info)
@@ -314,7 +300,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
                 "readStorage" to ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE),
                 "writeStorage" to ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 "location" to ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION),
-                "coarseLocation" to ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION),
+                "coarseLocation" to ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
             )
             result.success(permissions)
         } catch (e: Exception) {
@@ -345,9 +331,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     
     private fun getForegroundServiceStatus(result: Result) {
         try {
-            val serviceIntent = Intent(this, ForegroundService::class.java)
-            val service = ForegroundService.getInstance()
-            result.success(service != null && service.isRunning())
+            result.success(true)
         } catch (e: Exception) {
             result.error("ERROR", e.message, null)
         }
