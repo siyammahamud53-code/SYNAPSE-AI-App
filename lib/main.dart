@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:synapse_ai/providers/app_state.dart';
 import 'package:synapse_ai/services/background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +13,17 @@ import 'package:workmanager/workmanager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // ১. ক্র্যাশ রোধে ফায়ারবেস নিরাপদ স্টার্টআপ
+  try {
+    await Firebase.initializeApp();
+    debugPrint('Firebase backend initialized successfully');
+  } catch (e) {
+    debugPrint('Firebase init bypassed or error: $e');
+  }
+
+  // ২. ডিভাইসের প্রয়োজনীয় পারমিশন অটো সিকিউর করা
+  await _requestDevicePermissions();
+
   await _initializeServices();
   
   SystemChrome.setSystemUIOverlayStyle(
@@ -23,6 +36,20 @@ void main() async {
   );
   
   runApp(const SynapseAI());
+}
+
+Future<void> _requestDevicePermissions() async {
+  try {
+    await [
+      Permission.microphone,
+      Permission.camera,
+      Permission.phone,
+      Permission.storage,
+      Permission.notification,
+    ].request();
+  } catch (e) {
+    debugPrint("Permission handling notice: $e");
+  }
 }
 
 Future<void> _initializeServices() async {
