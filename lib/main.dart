@@ -11,92 +11,6 @@ import 'package:synapse_ai/services/background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // গ্লোবাল এরর হ্যান্ডলার - অ্যাপ যেন কোনো কারণে বন্ধ না হয়
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.dumpErrorToConsole(details);
-  };
-
-  runZonedGuarded(() async {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.black,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
-
-    // ১. নিরাপদ ফায়ারবেস স্টার্টআপ
-    try {
-      await Firebase.initializeApp();
-      debugPrint('Firebase backend initialized successfully');
-    } catch (e) {
-      debugPrint('Firebase init bypassed or error: $e');
-    }
-
-    // ২. পারমিশন সেফটি
-    await _requestDevicePermissionsSafely();
-
-    // ৩. ব্যাকগ্রাউন্ড সার্ভিস স্টার্টআপ
-    await _initializeServicesSafely();
-
-    runApp(const SynapseAI());
-  }, (error, stack) {
-    debugPrint('Global Protected Catch Exception: $error');
-  });
-}
-
-Future<void> _requestDevicePermissionsSafely() async {
-  try {
-    await [
-      Permission.microphone,
-      Permission.camera,
-      Permission.phone,
-      Permission.storage,
-      Permission.notification,
-    ].request();
-  } catch (e) {
-    debugPrint("Permission handling notice: $e");
-  }
-}
-
-Future<void> _initializeServicesSafely() async {
-  try {
-    await SharedPreferences.getInstance();
-  } catch (e) {
-    debugPrint('SharedPreferences init error: $e');
-  }
-
-  try {
-    await Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: kDebugMode,
-    );
-    
-    await Workmanager().registerPeriodicTask(
-      'synapse_ai_sync',
-      'syncTask',
-      frequency: const Duration(hours: 1),
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-        requiresBatteryNotLow: true,
-      ),
-    );
-  } catch (e) {
-    debugPrint('Workmanager init bypassed: $e');
-  }
-
-  try {
-    await BackgroundService().initialize();
-    debugPrint('Basic services initialized successfully');
-  } catch (e) {
-    debugPrint('Background service init error: $e');
-  }
-}
-
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -131,6 +45,78 @@ Future<void> _backgroundTask() async {
     debugPrint('Background processing completed');
   } catch (e) {
     debugPrint('Background processing failed: $e');
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // গ্লোবাল এরর ক্যাচিং
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.dumpErrorToConsole(details);
+  };
+
+  runZonedGuarded(() async {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
+    // ১. নিরাপদ ফায়ারবেস স্টার্টআপ
+    try {
+      await Firebase.initializeApp();
+      debugPrint('Firebase backend initialized successfully');
+    } catch (e) {
+      debugPrint('Firebase init bypassed or error: $e');
+    }
+
+    // ২. সেফ সার্ভিস ইনিশিয়ালাইজেশন
+    await _initializeServicesSafely();
+
+    runApp(const SynapseAI());
+  }, (error, stack) {
+    debugPrint('Global Protected Catch Exception: $error');
+  });
+}
+
+Future<void> _requestDevicePermissionsSafely() async {
+  try {
+    await [
+      Permission.microphone,
+      Permission.camera,
+      Permission.phone,
+      Permission.notification,
+    ].request();
+  } catch (e) {
+    debugPrint("Permission handling notice: $e");
+  }
+}
+
+Future<void> _initializeServicesSafely() async {
+  try {
+    await SharedPreferences.getInstance();
+  } catch (e) {
+    debugPrint('SharedPreferences init error: $e');
+  }
+
+  try {
+    await Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false,
+    );
+  } catch (e) {
+    debugPrint('Workmanager init bypassed: $e');
+  }
+
+  try {
+    await BackgroundService().initialize();
+    debugPrint('Basic services initialized successfully');
+  } catch (e) {
+    debugPrint('Background service init error: $e');
   }
 }
 
@@ -170,8 +156,22 @@ class SynapseAI extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // অ্যাপ সম্পূর্ণ চালু হওয়ার পর ব্যাকগ্রাউন্ডে পারমিশন চাওয়া হবে
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestDevicePermissionsSafely();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
