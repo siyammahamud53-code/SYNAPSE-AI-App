@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "856983614952",
+    "project_id": "synapseai-1fa9b",
+    "storage_bucket": "synapseai-1fa9b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856983614952:android:5a28d977b8846e5daf605d",
+        "android_client_info": {
+          "package_name": "com.synapse_ai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHU-Aohl9Sg2y1tI9OzuGZ2us95CULXU4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
