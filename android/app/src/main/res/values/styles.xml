@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- অ্যাপ চালু হওয়ার মুহূর্তের লঞ্চার/স্প্ল্যাশ থিম (LaunchTheme) -->
+    <style name="LaunchTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- ফুল স্ক্রিন ব্যাকগ্রাউন্ড সম্পূর্ণ ডার্ক/কালো -->
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <!-- নেভিগেশন ও স্ট্যাটাস বার ডার্ক করা -->
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+    </style>
+
+    <!-- অ্যাপ লোড হওয়ার পর ফ্লাটার ইউআই-এর মেইন থিম (NormalTheme) -->
+    <style name="NormalTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <!-- ফ্লাটার ভিউ লোড হওয়ার সময় কোনো সাদা ফ্ল্যাশ আটকানো -->
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+</resources>
