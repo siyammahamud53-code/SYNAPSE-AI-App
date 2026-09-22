@@ -1,4 +1,4 @@
-package com.synapse.ai
+package com.synapse_ai.app
 
 import android.Manifest
 import android.content.Context
@@ -36,17 +36,24 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mainActivity = this
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestAllPermissions()
+        try {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestAllPermissions()
+            }
+            startForegroundServiceInternal()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onCreate", e)
         }
-        
-        startForegroundServiceInternal()
     }
     
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
-        GeneratedPluginRegistrant.registerWith(flutterEngine)
+        super.configureFlutterEngine(flutterEngine)
+        try {
+            GeneratedPluginRegistrant.registerWith(flutterEngine)
+        } catch (e: Exception) {
+            Log.e(TAG, "Plugin registration error", e)
+        }
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler(this)
     }
@@ -76,38 +83,43 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     }
     
     private fun requestAllPermissions() {
-        val permissions = mutableListOf<String>()
-        
-        permissions.add(Manifest.permission.RECORD_AUDIO)
-        permissions.add(Manifest.permission.CAMERA)
-        permissions.add(Manifest.permission.READ_PHONE_STATE)
-        permissions.add(Manifest.permission.CALL_PHONE)
-        permissions.add(Manifest.permission.ANSWER_PHONE_CALLS)
-        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
-        permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-        permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
-            permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
-            permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
-        }
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
-        
-        val missingPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        
-        if (missingPermissions.isNotEmpty()) {
-            ActivityCompat.requestPermissions(
-                this,
-                missingPermissions.toTypedArray(),
-                PERMISSION_REQUEST_CODE
-            )
+        try {
+            val permissions = mutableListOf<String>()
+            
+            permissions.add(Manifest.permission.RECORD_AUDIO)
+            permissions.add(Manifest.permission.CAMERA)
+            permissions.add(Manifest.permission.READ_PHONE_STATE)
+            permissions.add(Manifest.permission.CALL_PHONE)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                permissions.add(Manifest.permission.ANSWER_PHONE_CALLS)
+            }
+            
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            } else {
+                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+                permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+                permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
+            }
+            
+            val missingPermissions = permissions.filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            
+            if (missingPermissions.isNotEmpty()) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    missingPermissions.toTypedArray(),
+                    PERMISSION_REQUEST_CODE
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error requesting permissions", e)
         }
     }
     
@@ -151,21 +163,19 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
             "/data/local/su",
             "/su/bin/su"
         )
-        return paths.any { File(it).exists() } || 
-               try {
-                   Runtime.getRuntime().exec("which su")
-                   true
-               } catch (e: Exception) {
-                   false
-               }
+        return paths.any { File(it).exists() }
     }
     
     private fun checkAccessibilityEnabled(): Boolean {
-        val enabledServices = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        )
-        return enabledServices?.contains("com.synapse.ai") == true
+        return try {
+            val enabledServices = Settings.Secure.getString(
+                contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            )
+            enabledServices?.contains(packageName) == true
+        } catch (e: Exception) {
+            false
+        }
     }
     
     private fun checkOverlayEnabled(): Boolean {
@@ -178,8 +188,12 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     
     private fun checkBatteryOptimizationIgnored(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            powerManager.isIgnoringBatteryOptimizations(packageName)
+            try {
+                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                powerManager.isIgnoringBatteryOptimizations(packageName)
+            } catch (e: Exception) {
+                false
+            }
         } else {
             true
         }
@@ -231,11 +245,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     }
     
     private fun takeScreenshot(result: Result) {
-        try {
-            result.success(true)
-        } catch (e: Exception) {
-            result.error("ERROR", e.message, null)
-        }
+        result.success(true)
     }
     
     private fun openSettings(result: Result) {
@@ -260,26 +270,18 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     }
     
     private fun stopService(result: Result) {
-        try {
-            result.success(true)
-        } catch (e: Exception) {
-            result.error("ERROR", e.message, null)
-        }
+        result.success(true)
     }
     
     private fun startForegroundServiceInternal() {
-        try {
-            Log.d(TAG, "Foreground service check initialized")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize service check", e)
-        }
+        Log.d(TAG, "Foreground service check initialized")
     }
     
     private fun getPackageInfo(result: Result) {
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
             val info = mapOf(
-                "versionName" to packageInfo.versionName,
+                "versionName" to (packageInfo.versionName ?: "1.0.0"),
                 "versionCode" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong(),
                 "packageName" to packageInfo.packageName
             )
@@ -296,11 +298,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
                 "camera" to ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA),
                 "phoneState" to ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE),
                 "callPhone" to ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE),
-                "answerCalls" to ContextCompat.checkSelfPermission(this, Manifest.permission.ANSWER_PHONE_CALLS),
-                "readStorage" to ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE),
-                "writeStorage" to ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                "location" to ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION),
-                "coarseLocation" to ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                "location" to ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             )
             result.success(permissions)
         } catch (e: Exception) {
@@ -318,23 +316,11 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     }
     
     private fun openPermissionSettings(result: Result) {
-        try {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            intent.data = Uri.parse("package:$packageName")
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            result.success(true)
-        } catch (e: Exception) {
-            result.error("ERROR", e.message, null)
-        }
+        openSettings(result)
     }
     
     private fun getForegroundServiceStatus(result: Result) {
-        try {
-            result.success(true)
-        } catch (e: Exception) {
-            result.error("ERROR", e.message, null)
-        }
+        result.success(true)
     }
     
     private fun restartApp(result: Result) {
@@ -356,12 +342,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            val granted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            if (granted) {
-                Log.d(TAG, "All permissions granted")
-            } else {
-                Log.w(TAG, "Some permissions were denied")
-            }
+            Log.d(TAG, "Permissions result received")
         }
     }
     
