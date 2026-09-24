@@ -16,9 +16,9 @@ import 'package:workmanager/workmanager.dart';
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
-      debugPrint('Background UAS Task Executed: $task');
+      debugPrint('Background UAS Autonomous Task: $task');
     } catch (e) {
-      debugPrint('Background Task Exec Error: $e');
+      debugPrint('Background Execution Notice: $e');
     }
     return Future.value(true);
   });
@@ -159,6 +159,14 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
         : const Color(0xFFFF007F); // Neon Magenta for Maya
   }
 
+  void _handleSend(AppState appState) {
+    final text = _inputController.text.trim();
+    if (text.isNotEmpty) {
+      _inputController.clear();
+      appState.sendUserMessage(text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
@@ -168,7 +176,6 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
       backgroundColor: const Color(0xFF02040A),
       body: Stack(
         children: [
-          // 1. Futuristic JARVIS Grid Lines Canvas
           Positioned.fill(
             child: CustomPaint(
               painter: JarvisHudBackgroundPainter(themeColor: themeColor),
@@ -179,7 +186,6 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Top Diagnostics Header
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Row(
@@ -209,7 +215,6 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
                         ],
                       ),
 
-                      // Persona Indicator Badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
@@ -231,7 +236,6 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
                   ),
                 ),
 
-                // Center Animated Iron Man Arc Reactor
                 Center(
                   child: AnimatedBuilder(
                     animation: Listenable.merge([_rotationController, _pulseController]),
@@ -251,12 +255,10 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
                   ),
                 ),
 
-                // Bottom Intelligent Command Console
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     children: [
-                      // Active Context Dialog Box
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -285,7 +287,6 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
                       ),
                       const SizedBox(height: 15),
 
-                      // Command Input Box
                       Row(
                         children: [
                           Expanded(
@@ -307,22 +308,12 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
                                   borderSide: BorderSide(color: themeColor),
                                 ),
                               ),
-                              onSubmitted: (val) {
-                                if (val.isNotEmpty) {
-                                  appState.processIntelligentPersonaRouting(val);
-                                  _inputController.clear();
-                                }
-                              },
+                              onSubmitted: (_) => _handleSend(appState),
                             ),
                           ),
                           const SizedBox(width: 10),
                           GestureDetector(
-                            onTap: () {
-                              if (_inputController.text.isNotEmpty) {
-                                appState.processIntelligentPersonaRouting(_inputController.text);
-                                _inputController.clear();
-                              }
-                            },
+                            onTap: () => _handleSend(appState),
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -352,7 +343,6 @@ class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProvider
   }
 }
 
-// Custom Painter for Iron Man Arc Reactor HUD
 class JarvisArcReactorPainter extends CustomPainter {
   final double rotationValue;
   final double pulseValue;
@@ -426,7 +416,6 @@ class JarvisArcReactorPainter extends CustomPainter {
   bool shouldRepaint(covariant JarvisArcReactorPainter oldDelegate) => true;
 }
 
-// Background Grid Canvas Painter
 class JarvisHudBackgroundPainter extends CustomPainter {
   final Color themeColor;
 
