@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Dummy models created to satisfy types if missing
+enum ActivePersona { ragna, maya }
+
 class DeviceInfo {
   final String deviceId;
   DeviceInfo({required this.deviceId});
@@ -23,6 +24,12 @@ class AppState extends ChangeNotifier {
   bool _isCallActive = false;
   bool _isConnected = false;
   
+  // Free Guy Style Autonomous State Variables
+  ActivePersona _currentPersona = ActivePersona.ragna;
+  String _activeSpeechContext = "Synapse Neural Core Active";
+  bool _isNpcSelfThinking = false;
+  int _deviceFpsLimit = 60; // Auto-calculated based on device capacity
+  
   String _sessionId = '';
   String _userId = '';
   String _deviceId = '';
@@ -35,7 +42,7 @@ class AppState extends ChangeNotifier {
   
   double _memoryUsage = 0.0;
   double _cpuUsage = 0.0;
-  int _batteryLevel = 0;
+  int _batteryLevel = 100;
   bool _isCharging = false;
   
   int _totalTasks = 0;
@@ -43,7 +50,7 @@ class AppState extends ChangeNotifier {
   int _failedTasks = 0;
   double _successRate = 0.0;
   
-  String _currentActivity = 'Idle';
+  String _currentActivity = 'Autonomous Monitoring Active';
   String _lastError = '';
   List<String> _recentTasks = [];
   Map<String, dynamic> _metrics = {};
@@ -60,6 +67,11 @@ class AppState extends ChangeNotifier {
   bool get isVisionActive => _isVisionActive;
   bool get isCallActive => _isCallActive;
   bool get isConnected => _isConnected;
+  ActivePersona get currentPersona => _currentPersona;
+  String get activeSpeechContext => _activeSpeechContext;
+  bool get isNpcSelfThinking => _isNpcSelfThinking;
+  int get deviceFpsLimit => _deviceFpsLimit;
+  
   String get sessionId => _sessionId;
   String get userId => _userId;
   String get deviceId => _deviceId;
@@ -82,6 +94,37 @@ class AppState extends ChangeNotifier {
   
   Duration get uptime => DateTime.now().difference(_startTime);
   
+  // Smart Context-Based Switching (Ragna vs Maya)
+  void processIntelligentPersonaRouting(String userQuery) {
+    final text = userQuery.toLowerCase();
+    
+    // Check if query specifically addresses one persona without switching if asking about the other
+    if (text.contains('maya') || text.contains('মায়া')) {
+      if (text.contains('ragna') || text.contains('রাগনা')) {
+        // Asking about one to the other, keep current or handle contextually
+        _activeSpeechContext = "Both Ragna and Maya are monitoring this system parallelly.";
+      } else {
+        _currentPersona = ActivePersona.maya;
+        _activeSpeechContext = "Maya is now active and responding to you.";
+      }
+    } else if (text.contains('ragna') || text.contains('রাগনা')) {
+      _currentPersona = ActivePersona.ragna;
+      _activeSpeechContext = "Ragna core active. Ready for tactical directives.";
+    }
+    notifyListeners();
+  }
+
+  void updateNpcSelfThinking(bool isThinking, String thoughtContext) {
+    _isNpcSelfThinking = isThinking;
+    _activeSpeechContext = thoughtContext;
+    notifyListeners();
+  }
+
+  void setDeviceFpsLimit(int fps) {
+    _deviceFpsLimit = fps;
+    notifyListeners();
+  }
+
   // Setters
   set isOnboardingComplete(bool value) {
     _isOnboardingComplete = value;
@@ -246,34 +289,7 @@ class AppState extends ChangeNotifier {
       debugPrint('Error saving state: $e');
     }
   }
-  
-  void reset() {
-    _isOnboardingComplete = false;
-    _isServiceRunning = false;
-    _isVoiceActive = false;
-    _isVisionActive = false;
-    _isCallActive = false;
-    _isConnected = false;
-    _sessionId = '';
-    _userId = '';
-    _deviceId = '';
-    _lastActive = DateTime.now();
-    _memoryUsage = 0.0;
-    _cpuUsage = 0.0;
-    _batteryLevel = 0;
-    _isCharging = false;
-    _totalTasks = 0;
-    _completedTasks = 0;
-    _failedTasks = 0;
-    _successRate = 0.0;
-    _currentActivity = 'Idle';
-    _lastError = '';
-    _recentTasks = [];
-    _metrics = {};
-    _saveState();
-    notifyListeners();
-  }
-  
+
   @override
   void dispose() {
     _saveState();
