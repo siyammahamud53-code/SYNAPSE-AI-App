@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,16 +16,7 @@ import 'package:workmanager/workmanager.dart';
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
-      switch (task) {
-        case 'syncTask':
-          await _syncTask();
-          break;
-        case 'backgroundTask':
-          await _backgroundTask();
-          break;
-        default:
-          break;
-      }
+      debugPrint('Background UAS Task Executed: $task');
     } catch (e) {
       debugPrint('Background Task Exec Error: $e');
     }
@@ -32,31 +24,15 @@ void callbackDispatcher() {
   });
 }
 
-Future<void> _syncTask() async {
-  try {
-    debugPrint('Background sync completed');
-  } catch (e) {
-    debugPrint('Background sync failed: $e');
-  }
-}
-
-Future<void> _backgroundTask() async {
-  try {
-    debugPrint('Background processing completed');
-  } catch (e) {
-    debugPrint('Background processing failed: $e');
-  }
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // গ্লোবাল এরর ক্যাচিং
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details);
   };
 
   runZonedGuarded(() async {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -66,20 +42,16 @@ void main() async {
       ),
     );
 
-    // ১. নিরাপদ ফায়ারবেস স্টার্টআপ
     try {
       await Firebase.initializeApp();
-      debugPrint('Firebase backend initialized successfully');
     } catch (e) {
-      debugPrint('Firebase init bypassed or error: $e');
+      debugPrint('Firebase init bypassed: $e');
     }
 
-    // ২. সেফ সার্ভিস ইনিশিয়ালাইজেশন
     await _initializeServicesSafely();
-
     runApp(const SynapseAI());
   }, (error, stack) {
-    debugPrint('Global Protected Catch Exception: $error');
+    debugPrint('Global Protection Catch: $error');
   });
 }
 
@@ -90,6 +62,7 @@ Future<void> _requestDevicePermissionsSafely() async {
       Permission.camera,
       Permission.phone,
       Permission.notification,
+      Permission.systemAlertWindow,
     ].request();
   } catch (e) {
     debugPrint("Permission handling notice: $e");
@@ -99,24 +72,10 @@ Future<void> _requestDevicePermissionsSafely() async {
 Future<void> _initializeServicesSafely() async {
   try {
     await SharedPreferences.getInstance();
-  } catch (e) {
-    debugPrint('SharedPreferences init error: $e');
-  }
-
-  try {
-    await Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: false,
-    );
-  } catch (e) {
-    debugPrint('Workmanager init bypassed: $e');
-  }
-
-  try {
+    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
     await BackgroundService().initialize();
-    debugPrint('Basic services initialized successfully');
   } catch (e) {
-    debugPrint('Background service init error: $e');
+    debugPrint('Services init notice: $e');
   }
 }
 
@@ -133,10 +92,10 @@ class SynapseAI extends StatelessWidget {
       child: Consumer<AppState>(
         builder: (context, appState, _) {
           return MaterialApp(
-            title: 'SYNAPSE AI v3.0.0',
+            title: 'SYNAPSE AI - JARVIS CORE',
             debugShowCheckedModeBanner: false,
             theme: ThemeData.dark().copyWith(
-              scaffoldBackgroundColor: Colors.black,
+              scaffoldBackgroundColor: const Color(0xFF02040A),
             ),
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
@@ -148,7 +107,7 @@ class SynapseAI extends StatelessWidget {
               Locale('ar'),
               Locale('bn'),
             ],
-            home: const HomeScreen(),
+            home: const JarvisHomeScreen(),
           );
         },
       ),
@@ -156,78 +115,338 @@ class SynapseAI extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class JarvisHomeScreen extends StatefulWidget {
+  const JarvisHomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<JarvisHomeScreen> createState() => _JarvisHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _JarvisHomeScreenState extends State<JarvisHomeScreen> with TickerProviderStateMixin {
+  late AnimationController _rotationController;
+  late AnimationController _pulseController;
+  final TextEditingController _inputController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    // অ্যাপ সম্পূর্ণ চালু হওয়ার পর ব্যাকগ্রাউন্ডে পারমিশন চাওয়া হবে
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _requestDevicePermissionsSafely();
     });
+
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    _pulseController.dispose();
+    _inputController.dispose();
+    super.dispose();
+  }
+
+  Color _getPersonaColor(ActivePersona persona) {
+    return persona == ActivePersona.ragna
+        ? const Color(0xFF00F0FF) // Cyber Cyan for Ragna
+        : const Color(0xFFFF007F); // Neon Magenta for Maya
   }
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final themeColor = _getPersonaColor(appState.currentPersona);
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text(
-          'SYNAPSE AI',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.greenAccent.withOpacity(0.1),
-                border: Border.all(color: Colors.greenAccent, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.greenAccent.withOpacity(0.3),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  )
-                ],
-              ),
-              child: const Icon(
-                Icons.check_circle_outline,
-                size: 70,
-                color: Colors.greenAccent,
-              ),
+      backgroundColor: const Color(0xFF02040A),
+      body: Stack(
+        children: [
+          // 1. Futuristic JARVIS Grid Lines Canvas
+          Positioned.fill(
+            child: CustomPaint(
+              painter: JarvisHudBackgroundPainter(themeColor: themeColor),
             ),
-            const SizedBox(height: 30),
-            const Text(
-              'Synapse AI Ready & Running!',
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.greenAccent,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-              ),
+          ),
+
+          SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Top Diagnostics Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "SYNAPSE // UAS CORE v3.0",
+                            style: TextStyle(
+                              color: themeColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "24/7 AUTONOMOUS MONITORING ACTIVE",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 9,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Persona Indicator Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: themeColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: themeColor),
+                        ),
+                        child: Text(
+                          appState.currentPersona == ActivePersona.ragna ? "RAGNA ♂" : "MAYA ♀",
+                          style: TextStyle(
+                            color: themeColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Center Animated Iron Man Arc Reactor
+                Center(
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([_rotationController, _pulseController]),
+                    builder: (context, child) {
+                      return CustomPaint(
+                        painter: JarvisArcReactorPainter(
+                          rotationValue: _rotationController.value,
+                          pulseValue: _pulseController.value,
+                          themeColor: themeColor,
+                        ),
+                        child: const SizedBox(
+                          width: 260,
+                          height: 260,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Bottom Intelligent Command Console
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    children: [
+                      // Active Context Dialog Box
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: themeColor.withOpacity(0.4)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: themeColor.withOpacity(0.1),
+                              blurRadius: 15,
+                              spreadRadius: 2,
+                            )
+                          ],
+                        ),
+                        child: Text(
+                          appState.activeSpeechContext,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            height: 1.4,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+
+                      // Command Input Box
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _inputController,
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: "Talk to Ragna or Maya...",
+                                hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                                filled: true,
+                                fillColor: Colors.black54,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                  borderSide: BorderSide(color: themeColor.withOpacity(0.3)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                  borderSide: BorderSide(color: themeColor),
+                                ),
+                              ),
+                              onSubmitted: (val) {
+                                if (val.isNotEmpty) {
+                                  appState.processIntelligentPersonaRouting(val);
+                                  _inputController.clear();
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              if (_inputController.text.isNotEmpty) {
+                                appState.processIntelligentPersonaRouting(_inputController.text);
+                                _inputController.clear();
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: themeColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: themeColor.withOpacity(0.5),
+                                    blurRadius: 10,
+                                  )
+                                ],
+                              ),
+                              child: const Icon(Icons.send, color: Colors.black, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            const Text(
-              'Neural Core Initialized Successfully',
-              style: TextStyle(fontSize: 13, color: Colors.white54),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+// Custom Painter for Iron Man Arc Reactor HUD
+class JarvisArcReactorPainter extends CustomPainter {
+  final double rotationValue;
+  final double pulseValue;
+  final Color themeColor;
+
+  JarvisArcReactorPainter({
+    required this.rotationValue,
+    required this.pulseValue,
+    required this.themeColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    final glowPaint = Paint()
+      ..color = themeColor.withOpacity(0.1 + (pulseValue * 0.15))
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius - 10, glowPaint);
+
+    final outerRing = Paint()
+      ..color = themeColor.withOpacity(0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(center, radius - 20, outerRing);
+
+    final arcPaint = Paint()
+      ..color = themeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3.0;
+
+    double startAngle = rotationValue * 2 * math.pi;
+    for (int i = 0; i < 4; i++) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - 35),
+        startAngle + (i * math.pi / 2),
+        math.pi / 4,
+        false,
+        arcPaint,
+      );
+    }
+
+    final innerArcPaint = Paint()
+      ..color = themeColor.withOpacity(0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    double reverseAngle = -rotationValue * 2 * math.pi;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - 55),
+      reverseAngle,
+      math.pi * 1.2,
+      false,
+      innerArcPaint,
+    );
+
+    final coreGlow = Paint()
+      ..color = themeColor.withOpacity(0.4 + (pulseValue * 0.4))
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+    canvas.drawCircle(center, 28, coreGlow);
+
+    final coreSolid = Paint()
+      ..color = themeColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 18, coreSolid);
+  }
+
+  @override
+  bool shouldRepaint(covariant JarvisArcReactorPainter oldDelegate) => true;
+}
+
+// Background Grid Canvas Painter
+class JarvisHudBackgroundPainter extends CustomPainter {
+  final Color themeColor;
+
+  JarvisHudBackgroundPainter({required this.themeColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = themeColor.withOpacity(0.04)
+      ..strokeWidth = 1.0;
+
+    for (double i = 0; i < size.width; i += 28) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), gridPaint);
+    }
+    for (double i = 0; i < size.height; i += 28) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), gridPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant JarvisHudBackgroundPainter oldDelegate) =>
+      oldDelegate.themeColor != themeColor;
 }
