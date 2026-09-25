@@ -24,9 +24,9 @@ class AppState extends ChangeNotifier {
   // Hugging Face Endpoint
   final String _hfEndpoint = "https://siyammahamud53-synapse-ai-core.hf.space/chat";
   
-  // Environment variables injection (Build-time secure fetch)
-  final String _groqApiKey = const String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-  final String _geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+  // Safe Environment variables injection without direct fallback secrets
+  final String _groqApiKey = const String.fromEnvironment('GROQ_API_KEY');
+  final String _geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY');
 
   bool _isInitialized = false;
   bool _isOnboardingComplete = false;
@@ -75,7 +75,7 @@ class AppState extends ChangeNotifier {
     try {
       await _flutterTts.setLanguage("bn-BD");
       await _flutterTts.setPitch(1.0);
-      await _flutterTts.setSpeechRate(0.55);
+      await _flutterTts.setSpeechRate(0.5);
     } catch (e) {
       debugPrint("TTS Setup notice: $e");
     }
@@ -83,8 +83,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> speak(String text) async {
     if (text.isNotEmpty) {
-      await _flutterTts.stop();
-      await _flutterTts.speak(text);
+      try {
+        await _flutterTts.stop();
+        await _flutterTts.speak(text);
+      } catch (e) {
+        debugPrint("Voice playback error: $e");
+      }
     }
   }
 
@@ -118,7 +122,6 @@ class AppState extends ChangeNotifier {
   double get successRate => _successRate;
   String get currentActivity => _currentActivity;
   String get lastError => _lastError;
-  List<String> _getRecentTasks() => _recentTasks;
   List<String> get recentTasks => _recentTasks;
   Map<String, dynamic> get metrics => _metrics;
 
@@ -143,12 +146,12 @@ class AppState extends ChangeNotifier {
   Future<void> sendUserMessage(String userQuery) async {
     processIntelligentPersonaRouting(userQuery);
 
-    _activeSpeechContext = "Processing Request...";
+    _activeSpeechContext = "চিন্তা করছি...";
     notifyListeners();
 
     String? aiResponse;
 
-    // Fast-Pass 1: Direct Ultra-Fast Groq Pipeline
+    // Fast-Pass 1: Direct Groq Pipeline
     if (_groqApiKey.isNotEmpty) {
       try {
         final groqRes = await http.post(
@@ -163,47 +166,26 @@ class AppState extends ChangeNotifier {
               {
                 "role": "system", 
                 "content": _currentPersona == ActivePersona.ragna 
-                    ? "You are Ragna, an advanced real-life JARVIS AI system assistant. Answer clearly, accurately, concisely, and naturally." 
-                    : "You are Maya, an intelligent, empathetic female AI core. Answer clearly and naturally."
+                    ? "You are Ragna, an advanced JARVIS AI assistant. Answer in Bengali clearly, concisely, and naturally." 
+                    : "You are Maya, an intelligent female AI assistant. Answer in Bengali clearly and naturally."
               },
               {"role": "user", "content": userQuery}
             ],
             "max_tokens": 512,
             "temperature": 0.7
           }),
-        ).timeout(const Duration(milliseconds: 2500));
+        ).timeout(const Duration(seconds: 4));
 
         if (groqRes.statusCode == 200) {
           final data = jsonDecode(groqRes.body);
           aiResponse = data['choices'][0]['message']['content'];
         }
       } catch (e) {
-        debugPrint("Groq ultra-fast pass bypass: $e");
+        debugPrint("Groq bypass error: $e");
       }
     }
 
-    // Fast-Pass 2: Direct Gemini Pipeline
-    if (aiResponse == null && _geminiApiKey.isNotEmpty) {
-      try {
-        final geminiUrl = Uri.parse("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey");
-        final geminiRes = await http.post(
-          geminiUrl,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            "contents": [{"parts": [{"text": userQuery}]}]
-          }),
-        ).timeout(const Duration(milliseconds: 3000));
-
-        if (geminiRes.statusCode == 200) {
-          final data = jsonDecode(geminiRes.body);
-          aiResponse = data['candidates'][0]['content']['parts'][0]['text'];
-        }
-      } catch (e) {
-        debugPrint("Gemini direct bypass: $e");
-      }
-    }
-
-    // Fast-Pass 3: Hugging Face Fallback
+    // Fast-Pass 2: Hugging Face Core Pipeline
     if (aiResponse == null) {
       try {
         final response = await http.post(
@@ -213,14 +195,14 @@ class AppState extends ChangeNotifier {
             'message': userQuery,
             'persona': _currentPersona == ActivePersona.ragna ? 'ragna' : 'maya'
           }),
-        ).timeout(const Duration(seconds: 4));
+        ).timeout(const Duration(seconds: 5));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           aiResponse = data['response'] ?? data['message'];
         }
       } catch (e) {
-        debugPrint("HF Server offline or sleeping.");
+        debugPrint("HF Server offline.");
       }
     }
 
@@ -229,7 +211,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       await speak(aiResponse);
     } else {
-      _activeSpeechContext = "সার্ভার সংযোগে সমস্যা হচ্ছে। গিটহাব সিক্রেটস চেক করুন।";
+      _activeSpeechContext = "সার্ভার সংযোগে সমস্যা হচ্ছে। ইন্টারনেটের সাথে গিটহাব সিক্রেটস চেক করুন।";
       notifyListeners();
       await speak("সংযোগ সমস্যা দেখা দিয়েছে।");
     }
